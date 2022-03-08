@@ -1,0 +1,17 @@
+BasedOnStyle: Google
+Standard: c++17
+IndentWidth: 4
+BreakBeforeBraces: Stroustrup
+AlignAfterOpenBracket: AlwaysBreak
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+AllowShortFunctionsOnASingleLine: All
+AllowShortBlocksOnASingleLine: Always
+BinPackParameters: false
+BinPackArguments: false
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+IndentRequires: true
+PenaltyReturnTypeOnItsOwnLine: 1000
+BreakBeforeBinaryOperators: NonAssignment
+AlignOperands: AlignAfterOperator

@@ -1,2 +1,2 @@
 # matrix_lib
-C++ library for matrix operations
+C++ library for C-style quadratic matrix operations
