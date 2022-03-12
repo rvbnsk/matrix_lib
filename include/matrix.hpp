@@ -16,16 +16,21 @@ class Matrix {
    public:
     Matrix();
     ~Matrix();
+    Matrix(const Matrix<T, I, J> &) noexcept;
+    Matrix(Matrix<T, I, J> &&) noexcept;
+    constexpr Matrix<T, I, J> &operator=(const Matrix<T, I, J> &) noexcept;
+    constexpr Matrix<T, I, J> &operator=(Matrix<T, I, J> &&) noexcept;
     void insert(const int &);
-    Matrix operator+(const Matrix &);
+    Matrix<T, I, J> operator+(const Matrix &);
     // Matrix operator*(const Matrix &);
-    friend std::ostream &operator<<(std::ostream &, const Matrix &);
+
+    template <typename U, std::size_t A, std::size_t B>
+    friend std::ostream &operator<<(std::ostream &, const Matrix<U, A, B> &);
 };
 
 template <typename T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix()
 {
-    std::cout << "allocation" << std::endl;
     array = new T *[I];
     for (int i = 0; i < I; ++i) { array[i] = new T[J]; }
 }
@@ -37,6 +42,15 @@ Matrix<T, I, J>::~Matrix()
     delete array;
 
     array = nullptr;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+constexpr Matrix<T, I, J> &Matrix<T, I, J>::operator=(
+    Matrix<T, I, J> &&array) noexcept
+{
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
+    }
 }
 
 template <typename T, std::size_t I, std::size_t J>
@@ -60,11 +74,11 @@ Matrix<T, I, J> Matrix<T, I, J>::operator+(const Matrix<T, I, J> &array)
     return result;
 }
 
-template <typename T, std::size_t I, std::size_t J>
-std::ostream &operator<<(std::ostream &os, const Matrix<T, I, J> &array)
+template <typename U, std::size_t A, std::size_t B>
+std::ostream &operator<<(std::ostream &os, const Matrix<U, A, B> &array)
 {
-    for (int i = 0; i < I; ++i) {
-        for (int j = 0; j < J; ++j) { os << array.array[i][j] << " "; }
+    for (int i = 0; i < A; ++i) {
+        for (int j = 0; j < B; ++j) { os << array.array[i][j] << " "; }
         os << std::endl;
     }
 
