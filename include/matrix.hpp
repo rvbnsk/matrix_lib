@@ -18,11 +18,19 @@ class Matrix {
     ~Matrix();
     Matrix(const Matrix<T, I, J> &) noexcept;
     Matrix(Matrix<T, I, J> &&) noexcept;
-    constexpr Matrix<T, I, J> &operator=(const Matrix<T, I, J> &) noexcept;
-    constexpr Matrix<T, I, J> &operator=(Matrix<T, I, J> &&) noexcept;
-    void insert(const int &);
+    constexpr auto operator=(const Matrix<T, I, J> &) noexcept
+        -> Matrix<T, I, J> &;
+    constexpr auto operator=(Matrix<T, I, J> &&) noexcept -> Matrix<T, I, J> &;
+    void insert(const T &);
+    auto transpoze() -> Matrix<T, I, J> &;
     Matrix<T, I, J> operator+(const Matrix &);
-    // Matrix operator*(const Matrix &);
+    Matrix<T, I, J> &operator+=(const Matrix &);
+    Matrix<T, I, J> operator*(const Matrix &);
+    Matrix<T, I, J> &operator*=(const Matrix &);
+    Matrix<T, I, J> operator*(const T &);
+    Matrix<T, I, J> &operator*=(const T &);
+    inline auto operator==(const Matrix &) -> bool;
+    inline auto operator!=(const Matrix &) -> bool;
 
     template <typename U, std::size_t A, std::size_t B>
     friend std::ostream &operator<<(std::ostream &, const Matrix<U, A, B> &);
@@ -31,34 +39,47 @@ class Matrix {
 template <typename T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix()
 {
+    std::cout << "alloc" << std::endl;
     array = new T *[I];
-    for (int i = 0; i < I; ++i) { array[i] = new T[J]; }
+    for (auto i = 0; i < I; ++i) { array[i] = new T[J]; }
 }
 
 template <typename T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::~Matrix()
 {
-    for (int i = 0; i < I; ++i) { delete[] array[i]; }
+    std::cout << "dealloc" << std::endl;
+    for (auto i = 0; i < I; ++i) { delete[] array[i]; }
     delete array;
 
     array = nullptr;
 }
 
 template <typename T, std::size_t I, std::size_t J>
-constexpr Matrix<T, I, J> &Matrix<T, I, J>::operator=(
-    Matrix<T, I, J> &&array) noexcept
+constexpr auto Matrix<T, I, J>::operator=(Matrix<T, I, J> &&array) noexcept
+    -> Matrix<T, I, J> &
 {
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
     }
+    return *this;
 }
 
 template <typename T, std::size_t I, std::size_t J>
-void Matrix<T, I, J>::insert(const int &data)
+void Matrix<T, I, J>::insert(const T &data)
 {
-    for (int i = 0; i < I; ++i) {
-        for (int j = 0; j < J; ++j) { this->array[i][j] = data; }
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) { this->array[i][j] = data; }
     }
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::transpoze() -> Matrix<T, I, J> &
+{
+    Matrix result;
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) { result.array[i][j] = this->array[i][j]; }
+    }
+    return result;
 }
 
 template <typename T, std::size_t I, std::size_t J>
@@ -66,7 +87,7 @@ Matrix<T, I, J> Matrix<T, I, J>::operator+(const Matrix<T, I, J> &array)
 {
     Matrix result;
     for (auto i = 0; i < I; ++i) {
-        for (int j = 0; j < J; ++j) {
+        for (auto j = 0; j < J; ++j) {
             result.array[i][j] = this->array[i][j] + array.array[i][j];
         }
     }
@@ -74,11 +95,93 @@ Matrix<T, I, J> Matrix<T, I, J>::operator+(const Matrix<T, I, J> &array)
     return result;
 }
 
+template <typename T, std::size_t I, std::size_t J>
+Matrix<T, I, J> &Matrix<T, I, J>::operator+=(const Matrix<T, I, J> &array)
+{
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            this->array[i][j] = this->array[i][j] + array.array[i][j];
+        }
+    }
+
+    return *this;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+Matrix<T, I, J> Matrix<T, I, J>::operator*(const Matrix<T, I, J> &array)
+{
+    Matrix result;
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            result.array[i][j] = 0;
+            for (auto k = 0; k < J; ++k) {
+                result.array[i][j] += this->array[i][k] * array.array[k][j];
+            }
+        }
+    }
+    return result;
+}
+
+template <typename T, std::size_t I, size_t J>
+Matrix<T, I, J> &Matrix<T, I, J>::operator*=(const Matrix<T, I, J> &array)
+{
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            this->array[i][j] = 0;
+            for (auto k = 0; k < J; ++k) {
+                this->array[i][j] += this->array[i][k] * array.array[k][j];
+            }
+        }
+    }
+
+    return *this;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+Matrix<T, I, J> Matrix<T, I, J>::operator*(const T &scalar)
+{
+    Matrix result;
+    for (auto i = 0; i < J; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            result.array[i][j] = this->array[i][j] * scalar;
+        }
+    }
+    return result;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+Matrix<T, I, J> &Matrix<T, I, J>::operator*=(const T &scalar)
+{
+    for (auto i = 0; i < J; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            this->array[i][j] = this->array[i][j] * scalar;
+        }
+    }
+    return *this;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+inline auto Matrix<T, I, J>::operator==(const Matrix<T, I, J> &array) -> bool
+{
+    for (auto i = 0; i < J; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            if (this->array[i][j] != array.array[i][j]) return false;
+        }
+    }
+    return true;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+inline auto Matrix<T, I, J>::operator!=(const Matrix<T, I, J> &array) -> bool
+{
+    return !(*this == array);
+}
+
 template <typename U, std::size_t A, std::size_t B>
 std::ostream &operator<<(std::ostream &os, const Matrix<U, A, B> &array)
 {
-    for (int i = 0; i < A; ++i) {
-        for (int j = 0; j < B; ++j) { os << array.array[i][j] << " "; }
+    for (auto i = 0; i < A; ++i) {
+        for (auto j = 0; j < B; ++j) { os << array.array[i][j] << " "; }
         os << std::endl;
     }
 
