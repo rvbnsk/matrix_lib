@@ -23,14 +23,27 @@ class Matrix {
     constexpr auto operator=(Matrix<T, I, J> &&) noexcept -> Matrix<T, I, J> &;
     void insert(const T &);
     auto transpoze() -> Matrix<T, I, J> &;
-    Matrix<T, I, J> operator+(const Matrix &);
-    Matrix<T, I, J> &operator+=(const Matrix &);
-    Matrix<T, I, J> operator*(const Matrix &);
-    Matrix<T, I, J> &operator*=(const Matrix &);
+
+    template <typename U, std::size_t A, std::size_t B>
+    Matrix<T, I, J> operator+(const Matrix<U, A, B> &);
+
+    template <typename U, std::size_t A, std::size_t B>
+    Matrix<T, I, J> &operator+=(const Matrix<U, A, B> &);
+
+    template <typename U, std::size_t A, std::size_t B>
+    Matrix<T, I, J> operator*(const Matrix<U, A, B> &);
+
+    template <typename U, std::size_t A, std::size_t B>
+    Matrix<T, I, J> &operator*=(const Matrix<U, A, B> &);
+
     Matrix<T, I, J> operator*(const T &);
     Matrix<T, I, J> &operator*=(const T &);
-    inline auto operator==(const Matrix &) -> bool;
-    inline auto operator!=(const Matrix &) -> bool;
+
+    template <typename U, std::size_t A, std::size_t B>
+    inline auto operator==(const Matrix<U, A, B> &) -> bool;
+
+    template <typename U, std::size_t A, std::size_t B>
+    inline auto operator!=(const Matrix<U, A, B> &) -> bool;
 
     template <typename U, std::size_t A, std::size_t B>
     friend std::ostream &operator<<(std::ostream &, const Matrix<U, A, B> &);
@@ -39,7 +52,6 @@ class Matrix {
 template <typename T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix()
 {
-    std::cout << "alloc" << std::endl;
     array = new T *[I];
     for (auto i = 0; i < I; ++i) { array[i] = new T[J]; }
 }
@@ -47,7 +59,6 @@ Matrix<T, I, J>::Matrix()
 template <typename T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::~Matrix()
 {
-    std::cout << "dealloc" << std::endl;
     for (auto i = 0; i < I; ++i) { delete[] array[i]; }
     delete array;
 
@@ -83,7 +94,8 @@ auto Matrix<T, I, J>::transpoze() -> Matrix<T, I, J> &
 }
 
 template <typename T, std::size_t I, std::size_t J>
-Matrix<T, I, J> Matrix<T, I, J>::operator+(const Matrix<T, I, J> &array)
+template <typename U, std::size_t A, std::size_t B>
+Matrix<T, I, J> Matrix<T, I, J>::operator+(const Matrix<U, A, B> &array)
 {
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -96,7 +108,8 @@ Matrix<T, I, J> Matrix<T, I, J>::operator+(const Matrix<T, I, J> &array)
 }
 
 template <typename T, std::size_t I, std::size_t J>
-Matrix<T, I, J> &Matrix<T, I, J>::operator+=(const Matrix<T, I, J> &array)
+template <typename U, std::size_t A, std::size_t B>
+Matrix<T, I, J> &Matrix<T, I, J>::operator+=(const Matrix<U, A, B> &array)
 {
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -108,7 +121,8 @@ Matrix<T, I, J> &Matrix<T, I, J>::operator+=(const Matrix<T, I, J> &array)
 }
 
 template <typename T, std::size_t I, std::size_t J>
-Matrix<T, I, J> Matrix<T, I, J>::operator*(const Matrix<T, I, J> &array)
+template <typename U, std::size_t A, std::size_t B>
+Matrix<T, I, J> Matrix<T, I, J>::operator*(const Matrix<U, A, B> &array)
 {
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -123,7 +137,8 @@ Matrix<T, I, J> Matrix<T, I, J>::operator*(const Matrix<T, I, J> &array)
 }
 
 template <typename T, std::size_t I, size_t J>
-Matrix<T, I, J> &Matrix<T, I, J>::operator*=(const Matrix<T, I, J> &array)
+template <typename U, std::size_t A, std::size_t B>
+Matrix<T, I, J> &Matrix<T, I, J>::operator*=(const Matrix<U, A, B> &array)
 {
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -161,7 +176,8 @@ Matrix<T, I, J> &Matrix<T, I, J>::operator*=(const T &scalar)
 }
 
 template <typename T, std::size_t I, std::size_t J>
-inline auto Matrix<T, I, J>::operator==(const Matrix<T, I, J> &array) -> bool
+template <typename U, std::size_t A, std::size_t B>
+inline auto Matrix<T, I, J>::operator==(const Matrix<U, A, B> &array) -> bool
 {
     for (auto i = 0; i < J; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -172,7 +188,8 @@ inline auto Matrix<T, I, J>::operator==(const Matrix<T, I, J> &array) -> bool
 }
 
 template <typename T, std::size_t I, std::size_t J>
-inline auto Matrix<T, I, J>::operator!=(const Matrix<T, I, J> &array) -> bool
+template <typename U, std::size_t A, std::size_t B>
+inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B> &array) -> bool
 {
     return !(*this == array);
 }
