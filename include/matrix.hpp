@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <type_traits>
+#include <typeinfo>
 #include <utility>
 
 namespace mtl {
@@ -35,6 +36,8 @@ class Matrix {
     auto power(const unsigned int &) -> Matrix<T, I, J> &;
     auto det() -> T;
     auto is_diagonal() -> bool;
+    auto alloc(std::size_t, std::size_t);
+    auto ones();
 
     template <typename U, std::size_t A, std::size_t B>
     Matrix<T, I, J> operator+(const Matrix<U, A, B> &);
@@ -71,13 +74,13 @@ class Matrix {
 template <typename T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix()
 {
-    array = new T *[I];
-    for (auto i = 0; i < I; ++i) { array[i] = new T[J]; }
+    this->alloc(I, J);
 }
 
 template <typename T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::~Matrix()
 {
+    std::cout << "dealloc" << std::endl;
     for (auto i = 0; i < I; ++i) { delete[] array[i]; }
     delete array;
 
@@ -88,19 +91,16 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J>::Matrix(const Matrix<U, A, B> &array)
 {
-    this->array = new T *[I];
-    for (auto i = 0; i < I; ++i) { this->array[i] = new T[J]; }
-
     if (I != A || J != B) { throw std::range_error("Matrix::="); }
     else if (typeid(T).name() != typeid(U).name()) {
         throw std::invalid_argument("Matrix::=");
     }
 
+    this->alloc(I, J);
+
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
     }
-
-    return *this;
 }
 
 template <typename T, std::size_t I, std::size_t J>
@@ -108,13 +108,12 @@ template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    this->array = new T *[I];
-    for (auto i = 0; i < I; ++i) { this->array[i] = new T[J]; }
-
     if (I != A || J != B) { throw std::range_error("Matrix::="); }
     else if (typeid(T).name() != typeid(U).name()) {
         throw std::invalid_argument("Matrix::=");
     }
+
+    this->alloc(I, J);
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
@@ -127,13 +126,12 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(Matrix<U, A, B> &&array) -> Matrix<T, I, J> &
 {
-    this->array = new T *[I];
-    for (auto i = 0; i < I; ++i) { this->array[i] = new T[J]; }
-
     if (I != A || J != B) { throw std::range_error("Matrix::="); }
     else if (typeid(T).name() != typeid(U).name()) {
         throw std::invalid_argument("Matrix::=");
     }
+
+    this->alloc(I, J);
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
@@ -219,6 +217,16 @@ auto Matrix<T, I, J>::is_diagonal() -> bool
         return true;
     }
     return false;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::alloc(std::size_t i, std::size_t j)
+{
+    std::cout << "alloc" << std::endl;
+    array = new T *[i];
+    for (auto i = 0; i < I; ++i) { array[i] = new T[J]; }
+
+    return *this;
 }
 
 template <typename T, std::size_t I, std::size_t J>
