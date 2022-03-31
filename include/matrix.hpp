@@ -4,15 +4,20 @@
 #include <iostream>
 #include <stdexcept>
 #include <type_traits>
-#include <typeinfo>
 #include <utility>
 
 namespace mtl {
 
+/*template<typename T>
+concept Arithmetic = std::is_arithmetic_v<T> && requires(T type) {
+    type + type;
+    type * type;
+}; */
+
 template <typename T, std::size_t I, std::size_t J>
 class Matrix {
    private:
-    T **array = nullptr;
+    T array[I][J];
     unsigned int fill_counter = 0;
 
    public:
@@ -72,20 +77,10 @@ class Matrix {
 };
 
 template <typename T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Matrix()
-{
-    this->alloc(I, J);
-}
+Matrix<T, I, J>::Matrix() {}
 
 template <typename T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::~Matrix()
-{
-    std::cout << "dealloc" << std::endl;
-    for (auto i = 0; i < I; ++i) { delete[] array[i]; }
-    delete array;
-
-    array = nullptr;
-}
+Matrix<T, I, J>::~Matrix() {}
 
 template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
@@ -95,8 +90,6 @@ Matrix<T, I, J>::Matrix(const Matrix<U, A, B> &array)
     else if (typeid(T).name() != typeid(U).name()) {
         throw std::invalid_argument("Matrix::=");
     }
-
-    this->alloc(I, J);
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
@@ -113,8 +106,6 @@ auto Matrix<T, I, J>::operator=(const Matrix<U, A, B> &array)
         throw std::invalid_argument("Matrix::=");
     }
 
-    this->alloc(I, J);
-
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
     }
@@ -130,8 +121,6 @@ auto Matrix<T, I, J>::operator=(Matrix<U, A, B> &&array) -> Matrix<T, I, J> &
     else if (typeid(T).name() != typeid(U).name()) {
         throw std::invalid_argument("Matrix::=");
     }
-
-    this->alloc(I, J);
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
