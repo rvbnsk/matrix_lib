@@ -1,0 +1,20 @@
+Checks: '
+-*,
+bugprone-*,
+cert-*,
+cppcoreguidelines-*,
+-cppcoreguidelines-pro-bounds-pointer-arithmetic,
+modernize-*,
+-modernize-avoid-c-arrays,
+-modernize-use-nodiscard,
+readability-*,
+performance-*,
+clang-analyzer-*,
+performance-*,
+hicpp-*,
+-hicpp-special-member-functions,
+-hicpp-avoid-c-arrays,
+-hicpp-use-nullptr,
+-hicpp-braces-around-statements,
+-hicpp-no-array-decay
+'

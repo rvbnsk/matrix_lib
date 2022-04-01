@@ -5,14 +5,15 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <concepts>
 
 namespace mtl {
 
-/*template<typename T>
+template<typename T>
 concept Arithmetic = std::is_arithmetic_v<T> && requires(T type) {
     type + type;
     type * type;
-}; */
+};
 
 template <typename T, std::size_t I, std::size_t J>
 class Matrix {
@@ -41,7 +42,6 @@ class Matrix {
     auto power(const unsigned int &) -> Matrix<T, I, J> &;
     auto det() -> T;
     auto is_diagonal() -> bool;
-    auto alloc(std::size_t, std::size_t);
     auto ones();
 
     template <typename U, std::size_t A, std::size_t B>
@@ -206,16 +206,6 @@ auto Matrix<T, I, J>::is_diagonal() -> bool
         return true;
     }
     return false;
-}
-
-template <typename T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::alloc(std::size_t i, std::size_t j)
-{
-    std::cout << "alloc" << std::endl;
-    array = new T *[i];
-    for (auto i = 0; i < I; ++i) { array[i] = new T[J]; }
-
-    return *this;
 }
 
 template <typename T, std::size_t I, std::size_t J>
