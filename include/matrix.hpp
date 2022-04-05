@@ -1,18 +1,19 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
+#include <concepts>
 #include <iostream>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-#include <concepts>
 
 namespace mtl {
 
-template<typename T>
-concept Arithmetic = std::is_arithmetic_v<T> && requires(T type) {
+template <typename T>
+concept Arithmetic = std::is_arithmetic_v<T> &&requires(T type)
+{
     type + type;
-    type * type;
+    type *type;
 };
 
 template <typename T, std::size_t I, std::size_t J>
@@ -20,6 +21,18 @@ class Matrix {
    private:
     T array[I][J];
     unsigned int fill_counter = 0;
+
+   private:
+    class Row {
+       private:
+        std::size_t row;
+
+       public:
+        Row(std::size_t row) : row(row) {}
+        auto operator[](std::size_t col) -> T &;
+        auto operator[](std::size_t col) const -> const T &;
+        friend class Matrix;
+    };
 
    public:
     Matrix();
@@ -45,26 +58,26 @@ class Matrix {
     auto ones();
 
     template <typename U, std::size_t A, std::size_t B>
-    Matrix<T, I, J> operator+(const Matrix<U, A, B> &);
+    auto operator+(const Matrix<U, A, B> &) -> Matrix<T, I, J>;
 
     template <typename U, std::size_t A, std::size_t B>
-    Matrix<T, I, J> &operator+=(const Matrix<U, A, B> &);
+    auto operator+=(const Matrix<U, A, B> &) -> Matrix<T, I, J> &;
 
     template <typename U, std::size_t A, std::size_t B>
-    Matrix<T, I, J> operator-(const Matrix<U, A, B> &);
+    auto operator-(const Matrix<U, A, B> &) -> Matrix<T, I, J>;
 
     template <typename U, std::size_t A, std::size_t B>
-    Matrix<T, I, J> &operator-=(const Matrix<U, A, B> &);
+    auto operator-=(const Matrix<U, A, B> &) -> Matrix<T, I, J> &;
 
     template <typename U, std::size_t A, std::size_t B>
-    Matrix<T, I, J> operator*(const Matrix<U, A, B> &);
+    auto operator*(const Matrix<U, A, B> &) -> Matrix<T, I, J>;
 
     template <typename U, std::size_t A, std::size_t B>
-    Matrix<T, I, J> &operator*=(const Matrix<U, A, B> &);
+    auto operator*=(const Matrix<U, A, B> &) -> Matrix<T, I, J> &;
 
-    Matrix<T, I, J> operator*(const T &);
-    Matrix<T, I, J> &operator*=(const T &);
-    Matrix<T, I, J> &operator^(const unsigned int &);
+    auto operator*(const T &) -> Matrix<T, I, J>;
+    auto operator*=(const T &) -> Matrix<T, I, J> &;
+    auto operator^(const unsigned int &) -> Matrix<T, I, J> &;
 
     template <typename U, std::size_t A, std::size_t B>
     inline auto operator==(const Matrix<U, A, B> &) -> bool;
@@ -72,24 +85,30 @@ class Matrix {
     template <typename U, std::size_t A, std::size_t B>
     inline auto operator!=(const Matrix<U, A, B> &) -> bool;
 
+    auto operator[](std::size_t) -> Row &;
+    auto operator[](std::size_t) const -> const Row &;
+    auto operator()(std::size_t row, std::size_t col) -> T &;
+
     template <typename U, std::size_t A, std::size_t B>
     friend std::ostream &operator<<(std::ostream &, const Matrix<U, A, B> &);
 };
 
 template <typename T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Matrix() {}
+Matrix<T, I, J>::Matrix()
+{
+}
 
 template <typename T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::~Matrix() {}
+Matrix<T, I, J>::~Matrix()
+{
+}
 
 template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J>::Matrix(const Matrix<U, A, B> &array)
 {
-    if (I != A || J != B) { throw std::range_error("Matrix::="); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::=");
-    }
+    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix::invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
@@ -101,10 +120,8 @@ template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    if (I != A || J != B) { throw std::range_error("Matrix::="); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::=");
-    }
+    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
@@ -117,10 +134,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(Matrix<U, A, B> &&array) -> Matrix<T, I, J> &
 {
-    if (I != A || J != B) { throw std::range_error("Matrix::="); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::=");
-    }
+    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = array.array[i][j]; }
@@ -158,7 +173,7 @@ auto Matrix<T, I, J>::transpoze() -> Matrix<T, I, J> &
 template <typename T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::det() -> T
 {
-    if (I != J) { throw std::range_error("Matrix::det"); }
+    static_assert(I != J, "Matrix::det::invalid size");
 
     T det = 0;
     short sign = -1;
@@ -196,16 +211,15 @@ auto Matrix<T, I, J>::det() -> T
 template <typename T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::is_diagonal() -> bool
 {
-    if (I != J) { throw std::range_error("Matrix::diagonal"); }
+    if (I != J) { return false; }
     else {
         for (auto m = 0; m < I; ++m) {
             for (auto n = 0; n < I; ++n) {
-                if (m != n && this->array[m][n] != 0) return false;
+                if (m != n && this->array[m][n] != 0) { return false; }
             }
         }
-        return true;
     }
-    return false;
+    return true;
 }
 
 template <typename T, std::size_t I, std::size_t J>
@@ -220,10 +234,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J> Matrix<T, I, J>::operator+(const Matrix<U, A, B> &array)
 {
-    if (I != A || J != B) { throw std::range_error("Matrix::+"); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::+");
-    }
+    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -239,10 +251,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J> &Matrix<T, I, J>::operator+=(const Matrix<U, A, B> &array)
 {
-    if (I != A || J != B) { throw std::range_error("Matrix::+"); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::+");
-    }
+    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix::invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -257,10 +267,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J> Matrix<T, I, J>::operator-(const Matrix<U, A, B> &array)
 {
-    if (I != A || J != B) { throw std::range_error("Matrix::-"); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::-");
-    }
+    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -276,10 +284,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J> &Matrix<T, I, J>::operator-=(const Matrix<U, A, B> &array)
 {
-    if (I != A || J != B) { throw std::range_error("Matrix::-"); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::-");
-    }
+    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix::invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -294,10 +300,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J> Matrix<T, I, J>::operator*(const Matrix<U, A, B> &array)
 {
-    if (I != B) { throw std::range_error("Matrix::*"); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::*");
-    }
+    static_assert(I != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -316,10 +320,8 @@ template <typename T, std::size_t I, size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J> &Matrix<T, I, J>::operator*=(const Matrix<U, A, B> &array)
 {
-    if (I != B) { throw std::range_error("Matrix::*"); }
-    else if (typeid(T).name() != typeid(U).name()) {
-        throw std::invalid_argument("Matrix::*");
-    }
+    static_assert(I != B, "Matrix::invalid size");
+    static_assert(!std::is_same_v<T, U>, "Matrix::invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -389,6 +391,37 @@ template <typename U, std::size_t A, std::size_t B>
 inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B> &array) -> bool
 {
     return !(*this == array);
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::operator[](std::size_t row) -> Matrix<T, I, J>::Row &
+{
+    return Row(row);
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::operator[](std::size_t row) const
+    -> const Matrix<T, I, J>::Row &
+{
+    return Row(row);
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::Row::operator[](std::size_t col) -> T &
+{
+    return array(row, col);
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::Row::operator[](std::size_t col) const -> const T &
+{
+    return array(row, col);
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) -> T &
+{
+    return this->array[row][col];
 }
 
 template <typename U, std::size_t A, std::size_t B>
