@@ -16,7 +16,7 @@ template <class T, class U>
 inline constexpr bool is_same_v = std::is_same<T, U>::value;
 
 template <typename T>
-concept Arithmetic = is_arithmetic_v<T> && requires(T type)
+concept Arithmetic = is_arithmetic_v<T> &&requires(T type)
 {
     type + type;
     type - type;
@@ -135,8 +135,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J>::Matrix(const Matrix<U, A, B> &array)
 {
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
     *this = array;
 }
 
@@ -154,8 +154,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 Matrix<T, I, J>::Matrix(Matrix<U, A, B> &&array) noexcept
 {
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
 
     *this = array;
 
@@ -182,8 +182,8 @@ template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    static_assert(!is_same_v<T, U>, "Matrix invalid type");
-    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
 
     *this = array;
 
@@ -208,8 +208,8 @@ template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(Matrix<U, A, B> &&array) noexcept
     -> Matrix<T, I, J> &
 {
-    static_assert(!is_same_v<T, U>, "Matrix invalid type");
-    static_assert(I != A || J != B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
 
     *this = array;
 
@@ -245,7 +245,7 @@ auto Matrix<T, I, J>::transpoze() -> Matrix<T, I, J> &
 template <typename T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::det() -> T
 {
-    static_assert(I != J, "Matrix::det::invalid size");
+    static_assert(I == J, "Matrix::det::invalid size");
 
     T det = 0;
     int sign = -1;
@@ -313,8 +313,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator+(const Matrix<U, A, B> &array) -> Matrix<T, I, J>
 {
-    static_assert(I != A || J != B, "Matrix::invalid size");
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -331,8 +331,8 @@ template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator+=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    static_assert(I != A || J != B, "Matrix::invalid size");
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -347,8 +347,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator-(const Matrix<U, A, B> &array) -> Matrix<T, I, J>
 {
-    static_assert(I != A || J != B, "Matrix::invalid size");
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -365,8 +365,8 @@ template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator-=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    static_assert(I != A || J != B, "Matrix::invalid size");
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == A || J == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
@@ -381,8 +381,8 @@ template <typename T, std::size_t I, std::size_t J>
 template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator*(const Matrix<U, A, B> &array) -> Matrix<T, I, J>
 {
-    static_assert(I != B, "Matrix::invalid size");
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
     for (auto i = 0; i < I; ++i) {
@@ -402,8 +402,8 @@ template <typename U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator*=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    static_assert(I != B, "Matrix::invalid size");
-    static_assert(!is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(I == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) {
