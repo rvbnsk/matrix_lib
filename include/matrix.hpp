@@ -113,6 +113,20 @@ class Matrix {
     template <typename U, std::size_t A, std::size_t B>
     friend auto operator<<(std::ostream &, const Matrix<U, A, B> &)
         -> std::ostream &;
+
+    class iterator {
+       public:
+        iterator();
+        auto operator*() const -> T &;
+        auto operator++(int) -> iterator;
+        auto operator++() -> iterator &;
+        auto operator==(const iterator &iter) const -> bool;
+        auto operator!=(const iterator &iter) const -> bool;
+        friend class Matrix;
+    };
+
+    auto begin() const -> iterator;
+    auto end() const -> iterator;
 };
 
 template <typename T, std::size_t I, std::size_t J>
@@ -515,6 +529,11 @@ auto operator<<(std::ostream &os, const Matrix<U, A, B> &array)
     }
 
     return os;
+}
+
+template <typename T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::iterator::operator++(int) -> Matrix<T, I, J>::iterator
+{
 }
 
 }  // namespace mtl
