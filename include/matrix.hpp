@@ -1,6 +1,13 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
+//@TODO: implement iterator methods
+//@TODO: implement begin() and end()
+//@TODO: fix operator[] bug 
+//@TODO: implement std::initializer_list ctor
+//@TODO: finish Arithmetic and Scalar concept
+//@TODO: add const interator
+
 #include <concepts>
 #include <iostream>
 #include <stdexcept>
@@ -20,7 +27,7 @@ concept Arithmetic = is_arithmetic_v<T> &&requires(T type)
 {
     type + type;
     type - type;
-    type *type;
+    type * type;
     type == type;
     type != type;
 };
@@ -28,7 +35,7 @@ concept Arithmetic = is_arithmetic_v<T> &&requires(T type)
 template <typename T, typename U>
 concept Scalar = std::is_scalar_v<U> &&requires(T t, U u)
 {
-    t *u;
+    t * u;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -140,11 +147,11 @@ class Matrix {
         auto operator==(const iterator &iter) const -> bool;
         auto operator!=(const iterator &iter) const -> bool;
         friend class Matrix;
-    }
+    };
 
-    private : auto
-              begin() const -> iterator;
-    auto end() const -> iterator;
+    private : 
+    //auto begin() const -> iterator;
+    //xauto end() const -> iterator;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -603,7 +610,7 @@ Matrix<T, I, J>::iterator::iterator(std::size_t row_, std::size_t col_)
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::iterator::operator*() const -> T &
 {
-    return array[row][col];
+    return this->matrix->array[row][col];
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -615,6 +622,30 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::iterator::operator++(int) -> Matrix<T, I, J>::iterator
 {
 }
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::iterator::operator==(const iterator &iter) const -> bool
+{
+
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::iterator::operator!=(const iterator &iter) const -> bool
+{
+
+}
+
+/*template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::begin() const -> Matrix<T, I, J>::iterator
+{
+    return array[0][0];
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::end() const -> Matrix<T, I, J>::iterator
+{
+    return array[I][J];
+} */
 
 }  // namespace mtl
 
