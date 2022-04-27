@@ -3,7 +3,7 @@
 
 //@TODO: implement iterator methods
 //@TODO: implement begin() and end()
-//@TODO: fix operator[] bug 
+//@TODO: fix operator[] bug
 //@TODO: implement std::initializer_list ctor
 //@TODO: finish Arithmetic and Scalar concept
 //@TODO: add const interator
@@ -27,7 +27,7 @@ concept Arithmetic = is_arithmetic_v<T> &&requires(T type)
 {
     type + type;
     type - type;
-    type * type;
+    type *type;
     type == type;
     type != type;
 };
@@ -35,7 +35,7 @@ concept Arithmetic = is_arithmetic_v<T> &&requires(T type)
 template <typename T, typename U>
 concept Scalar = std::is_scalar_v<U> &&requires(T t, U u)
 {
-    t * u;
+    t *u;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -136,22 +136,24 @@ class Matrix {
 
     class iterator {
        private:
+        Matrix<T, I, J> matrix;
         std::size_t row;
         std::size_t col;
 
        public:
-        iterator(std::size_t row, std::size_t col);
-        auto operator*() const -> T &;
-        auto operator++() -> iterator &;
-        auto operator++(int) -> iterator;
+        iterator(Matrix<T, I, J> matrix, std::size_t row, std::size_t col);
+        auto operator*() const -> const T &;
+        auto operator++() -> const iterator &;
+        auto operator++(int) -> const iterator;
         auto operator==(const iterator &iter) const -> bool;
         auto operator!=(const iterator &iter) const -> bool;
         friend class Matrix;
     };
 
-    private : 
-    //auto begin() const -> iterator;
-    //xauto end() const -> iterator;
+    auto begin() -> iterator;
+    auto begin() const -> iterator;
+    auto end() -> iterator;
+    auto end() const -> iterator;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -221,7 +223,7 @@ template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    static_assert(is_same_v<T, U>, "Matrix invalid type");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
     static_assert(I == A || J == B, "Matrix::invalid size");
 
     *this = array;
@@ -247,7 +249,7 @@ template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator=(Matrix<U, A, B> &&array) noexcept
     -> Matrix<T, I, J> &
 {
-    static_assert(is_same_v<T, U>, "Matrix invalid type");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
     static_assert(I == A || J == B, "Matrix::invalid size");
 
     *this = array;
@@ -602,50 +604,71 @@ auto operator<<(std::ostream &os, const Matrix<U, A, B> &array)
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::iterator::iterator(std::size_t row_, std::size_t col_)
-    : row(row_), col(col_)
+Matrix<T, I, J>::iterator::iterator(
+    Matrix<T, I, J> matrix_,
+    std::size_t row_,
+    std::size_t col_)
+    : matrix(matrix_), row(row_), col(col_)
 {
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator*() const -> T &
+auto Matrix<T, I, J>::iterator::operator*() const -> const T &
 {
-    return this->matrix->array[row][col];
+    return matrix(row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++() -> Matrix<T, I, J>::iterator &
+auto Matrix<T, I, J>::iterator::operator++()
+    -> const Matrix<T, I, J>::iterator &
 {
+    if (row != I - 1 || col != J - 1) { return iterator(matrix, row, ++col); }
+    else if (col == J - 1) {
+        return iterator(matrix, ++row, 0);
+    }
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++(int) -> Matrix<T, I, J>::iterator
+auto Matrix<T, I, J>::iterator::operator++(int)
+    -> const Matrix<T, I, J>::iterator
 {
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::iterator::operator==(const iterator &iter) const -> bool
 {
-
+    return (this->matrix(row, col) == iter.matrix(row, col));
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::iterator::operator!=(const iterator &iter) const -> bool
 {
-
+    return !(*this == iter);
 }
 
-/*template <Arithmetic T, std::size_t I, std::size_t J>
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::begin() -> Matrix<T, I, J>::iterator
+{
+    return iterator(*this, 0, 0);
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::begin() const -> Matrix<T, I, J>::iterator
 {
-    return array[0][0];
+    return iterator(*this, 0, 0);
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::end() -> Matrix<T, I, J>::iterator
+{
+    return iterator(*this, I, J);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::end() const -> Matrix<T, I, J>::iterator
 {
-    return array[I][J];
-} */
+    return iterator(*this, I, J);
+}
 
 }  // namespace mtl
 
