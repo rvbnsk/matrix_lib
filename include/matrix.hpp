@@ -6,6 +6,9 @@
 //@TODO: implement std::initializer_list ctor
 //@TODO: finish Arithmetic and Scalar concept
 //@TODO: add const interator
+//@TODO: fix operator[] as to to be able to write values
+//@TODO: fix operator<< for Row class
+//@TODO: improve throw in operator[]
 
 #include <concepts>
 #include <iostream>
@@ -56,6 +59,10 @@ class Matrix {
         Row(const std::vector<T> &row) : row(row) {}
         auto operator[](std::size_t col) -> T &;
         auto operator[](std::size_t col) const -> const T &;
+
+        friend auto operator<<(std::ostream &os, const Row &row)
+            -> std::ostream &;
+
         friend class Matrix;
     };
 
@@ -132,7 +139,7 @@ class Matrix {
     auto operator()(std::size_t row, std::size_t col) const -> const T &;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
-    friend auto operator<<(std::ostream &, const Matrix<U, A, B> &)
+    friend auto operator<<(std::ostream &os, const Matrix<U, A, B> &array)
         -> std::ostream &;
 
     class iterator {
@@ -619,6 +626,16 @@ auto operator<<(std::ostream &os, const Matrix<U, A, B> &array)
         for (auto j = 0; j < B; ++j) { os << array.array[i][j] << " "; }
         os << std::endl;
     }
+
+    return os;
+}
+
+template <Arithmetic U, std::size_t A, std::size_t B>
+auto operator<<(std::ostream &os, const typename Matrix<U, A, B>::Row &row)
+    -> std::ostream &
+{
+    for (const auto &elem : row.row) { os << elem << " "; }
+    os << std::endl;
 
     return os;
 }
