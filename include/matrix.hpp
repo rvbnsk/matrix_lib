@@ -1,13 +1,12 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
-//@TODO: implement iterator methods
-//@TODO: implement begin() and end()
 //@TODO: implement std::initializer_list ctor
 //@TODO: finish Arithmetic and Scalar concept (?)
 //@TODO: add const interator
 //@TODO: fix operator<< for Row class
 //@TODO: improve throw in operator[]
+//@TODO: add secondary method operating on iterators
 
 #include <concepts>
 #include <iostream>
@@ -25,7 +24,7 @@ template <class T, class U>
 inline constexpr auto is_same_v = std::is_same<T, U>::value;
 
 template <typename T>
-concept Arithmetic = is_arithmetic_v<T> &&requires(T type)
+concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 {
     type + type;
     type - type;
@@ -35,7 +34,7 @@ concept Arithmetic = is_arithmetic_v<T> &&requires(T type)
 };
 
 template <typename T, typename U>
-concept Scalar = std::is_scalar_v<U> &&requires(T t, U u)
+concept Scalar = std::is_scalar_v<U> and requires(T t, U u)
 {
     t *u;
 };
@@ -179,15 +178,18 @@ class Matrix {
 
     class iterator {
        private:
-        Matrix<T, I, J> matrix;
+        Matrix<T, I, J> &matrix;
         std::size_t row;
         std::size_t col;
 
        public:
-        iterator(Matrix<T, I, J> matrix, std::size_t row, std::size_t col);
+        iterator(Matrix<T, I, J> &matrix, std::size_t row, std::size_t col);
         auto operator*() const -> const T &;
+        auto operator*() -> T &;
         auto operator++() -> const iterator &;
+        auto operator++() const -> const iterator &;
         auto operator++(int) -> const iterator;
+        auto operator++(int) const -> const iterator;
         auto operator==(const iterator &iter) const -> bool;
         auto operator!=(const iterator &iter) const -> bool;
         friend class Matrix;
@@ -239,7 +241,7 @@ template <Arithmetic U, std::size_t A, std::size_t B>
 Matrix<T, I, J>::Matrix(Matrix<U, A, B> &&array) noexcept
 {
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I == A && J == B, "Matrix::invalid size");
+    static_assert(I == A and J == B, "Matrix::invalid size");
 
     *this = array;
 
@@ -267,7 +269,7 @@ auto Matrix<T, I, J>::operator=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I == A && J == B, "Matrix::invalid size");
+    static_assert(I == A and J == B, "Matrix::invalid size");
 
     *this = array;
 
@@ -293,7 +295,7 @@ auto Matrix<T, I, J>::operator=(Matrix<U, A, B> &&array) noexcept
     -> Matrix<T, I, J> &
 {
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I == A && J == B, "Matrix::invalid size");
+    static_assert(I == A and J == B, "Matrix::invalid size");
 
     *this = array;
 
@@ -411,7 +413,7 @@ auto Matrix<T, I, J>::is_diagonal() -> bool
 
     for (auto m = 0; m < I; ++m) {
         for (auto n = 0; n < I; ++n) {
-            if (m != n && this->array[m][n] != 0) { return false; }
+            if (m != n and this->array[m][n] != 0) { return false; }
         }
     }
 
@@ -425,7 +427,7 @@ auto Matrix<T, I, J>::is_diagonal() const -> bool
 
     for (auto m = 0; m < I; ++m) {
         for (auto n = 0; n < I; ++n) {
-            if (m != n && this->array[m][n] != 0) { return false; }
+            if (m != n and this->array[m][n] != 0) { return false; }
         }
     }
 
@@ -462,7 +464,7 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator+(const Matrix<U, A, B> &array) -> Matrix<T, I, J>
 {
-    static_assert(I == A && J == B, "Matrix::invalid size");
+    static_assert(I == A and J == B, "Matrix::invalid size");
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
@@ -480,7 +482,7 @@ template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator+=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    static_assert(I == A && J == B, "Matrix::invalid size");
+    static_assert(I == A and J == B, "Matrix::invalid size");
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     *this = *this + array;
@@ -492,7 +494,7 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator-(const Matrix<U, A, B> &array) -> Matrix<T, I, J>
 {
-    static_assert(I == A && J == B, "Matrix::invalid size");
+    static_assert(I == A and J == B, "Matrix::invalid size");
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     Matrix result;
@@ -510,7 +512,7 @@ template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator-=(const Matrix<U, A, B> &array)
     -> Matrix<T, I, J> &
 {
-    static_assert(I == A && J == B, "Matrix::invalid size");
+    static_assert(I == A and J == B, "Matrix::invalid size");
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
 
     *this = *this - array;
@@ -587,7 +589,7 @@ template <Arithmetic U, std::size_t A, std::size_t B>
 inline auto Matrix<T, I, J>::operator==(const Matrix<U, A, B> &array) const
     -> bool
 {
-    if (I != A || J != B || typeid(T).name() != typeid(U).name()) {
+    if (I != A or J != B or typeid(T).name() != typeid(U).name()) {
         return false;
     }
 
@@ -611,42 +613,42 @@ inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B> &array) const
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::operator[](std::size_t row) -> Row
 {
-    if (row > (I - 1) || row < 0) { throw "Matrix::invalid row number"; }
+    if (row > (I - 1) or row < 0) { throw "Matrix::invalid row number"; }
     return Row(*this, row);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::operator[](std::size_t row) const -> Crow
 {
-    if (row > (I - 1) || row < 0) { throw "Matrix::invalid row number"; }
+    if (row > (I - 1) or row < 0) { throw "Matrix::invalid row number"; }
     return Crow(*this, row);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::Row::operator[](std::size_t col) -> T &
 {
-    if (col > (J - 1) || col < 0) { throw "Matrix::invalid col number"; }
+    if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(this->row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::Row::operator[](std::size_t col) const -> T &
 {
-    if (col > (J - 1) || col < 0) { throw "Matrix::invalid col number"; }
+    if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(this->row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::Crow::operator[](std::size_t col) -> const T &
 {
-    if (col > (J - 1) || col < 0) { throw "Matrix::invalid col number"; }
+    if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(this->row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::Crow::operator[](std::size_t col) const -> const T &
 {
-    if (col > (J - 1) || col < 0) { throw "Matrix::invalid col number"; }
+    if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(this->row, col);
 }
 
@@ -687,11 +689,17 @@ auto operator<<(std::ostream &os, const typename Matrix<U, A, B>::Row &row)
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::iterator::iterator(
-    Matrix<T, I, J> matrix_,
+    Matrix<T, I, J> &matrix_,
     std::size_t row_,
     std::size_t col_)
     : matrix(matrix_), row(row_), col(col_)
 {
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::iterator::operator*() -> T &
+{
+    return matrix(row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -704,16 +712,58 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::iterator::operator++()
     -> const Matrix<T, I, J>::iterator &
 {
-    if (row != I - 1 || col != J - 1) { return iterator(matrix, row, ++col); }
-    else if (col == J - 1) {
-        return iterator(matrix, ++row, 0);
+    if (row != i - 1 and col != j - 1) { ++col; }
+    if (col == j - 1) {
+        ++row;
+        col = 0;
     }
+    std::cout << "jeden: " << row << " " << col << std::endl;
+    return *this;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::iterator::operator++() const
+    -> const Matrix<T, I, J>::iterator &
+{
+    if (row != I - 1 and col != J - 1) { ++col; }
+    if (col == J - 1) {
+        ++row;
+        col = 0;
+    }
+    std::cout << "dwa: " << row << " " << col << std::endl;
+    return *this;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::iterator::operator++(int)
     -> const Matrix<T, I, J>::iterator
 {
+    auto temp = *this;
+    std::cout << "trzy: " << temp.row << " " << temp.col << std::endl;
+
+    if (row != I - 1 and col != J - 1) { ++temp.col; }
+    if (col == J - 1) {
+        ++temp.row;
+        temp.col = 0;
+    }
+    std::cout << "trzy: " << temp.row << " " << temp.col << std::endl;
+
+    return temp;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::iterator::operator++(int) const
+    -> const Matrix<T, I, J>::iterator
+{
+    auto temp = *this;
+    if (row != I - 1 and col != J - 1) { ++temp.col; }
+    if (col == J - 1) {
+        ++temp.row;
+        temp.col = 0;
+    }
+    std::cout << "cztery: " << temp.row << " " << temp.col << std::endl;
+
+    return temp;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -743,13 +793,13 @@ auto Matrix<T, I, J>::begin() const -> Matrix<T, I, J>::iterator
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::end() -> Matrix<T, I, J>::iterator
 {
-    return iterator(*this, I, J);
+    return iterator(*this, I - 1, J - 1);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::end() const -> Matrix<T, I, J>::iterator
 {
-    return iterator(*this, I, J);
+    return iterator(*this, I - 1, J - 1);
 }
 
 }  // namespace mtl
