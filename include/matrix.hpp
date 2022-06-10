@@ -2,6 +2,7 @@
 #define MTL_MATRIX_HPP
 
 //@TODO: add [[likely]] and [[unlikely]] (and other) attributes to hot places as in is_diagonal()
+//@TODO: add ctor with custom value fill
 //@TODO: implement std::initializer_list ctor
 //@TODO: finish Arithmetic and Scalar concept (?)
 //@TODO: add const interator
@@ -29,7 +30,7 @@ concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 {
     type + type;
     type - type;
-    type *type;
+    type * type;
     type == type;
     type != type;
 };
@@ -37,7 +38,7 @@ concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 template <typename T, typename U>
 concept Scalar = std::is_scalar_v<U> and requires(T t, U u)
 {
-    t *u;
+    t * u;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
