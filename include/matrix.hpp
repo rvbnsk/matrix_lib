@@ -1,6 +1,7 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
+//@TODO: add [[likely]] and [[unlikely]] (and other) attributes to hot places as in is_diagonal()
 //@TODO: implement std::initializer_list ctor
 //@TODO: finish Arithmetic and Scalar concept (?)
 //@TODO: add const interator
@@ -409,7 +410,7 @@ auto Matrix<T, I, J>::det() const -> T
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::is_diagonal() -> bool
 {
-    if (I != J) { return false; }
+    if (I != J) [[unlikely]] { return false; }
 
     for (auto m = 0; m < I; ++m) {
         for (auto n = 0; n < I; ++n) {
