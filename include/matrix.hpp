@@ -1,7 +1,8 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
-//@TODO: add [[likely]] and [[unlikely]] (and other) attributes to hot places as in is_diagonal()
+//@TODO: add [[likely]] and [[unlikely]] (and other) attributes to hot places as
+//in is_diagonal()
 //@TODO: add ctor with custom value fill
 //@TODO: implement std::initializer_list ctor
 //@TODO: finish Arithmetic and Scalar concept (?)
@@ -9,6 +10,7 @@
 //@TODO: fix operator<< for Row class
 //@TODO: improve throw in operator[]
 //@TODO: add secondary method operating on iterators
+//@TODO: add reverse iterator, add const reverse iterator
 
 #include <concepts>
 #include <iostream>
@@ -96,6 +98,7 @@ class Matrix {
         auto operator[](std::size_t col) -> const T &;
         auto operator[](std::size_t col) const -> const T &;
 
+        template <Arithmetic U, std::size_t A, std::size_t B>
         friend auto operator<<(std::ostream &os, const Crow &row)
             -> std::ostream &;
 
@@ -104,6 +107,7 @@ class Matrix {
 
    public:
     Matrix();
+    explicit Matrix(const T value);
     ~Matrix() = default;
 
     Matrix(const Matrix<T, I, J> &array);
@@ -188,10 +192,8 @@ class Matrix {
         iterator(Matrix<T, I, J> &matrix, std::size_t row, std::size_t col);
         auto operator*() const -> const T &;
         auto operator*() -> T &;
-        auto operator++() -> const iterator &;
-        auto operator++() const -> const iterator &;
-        auto operator++(int) -> const iterator;
-        auto operator++(int) const -> const iterator;
+        auto operator++() -> iterator &;
+        auto operator++(int) -> iterator;
         auto operator==(const iterator &iter) const -> bool;
         auto operator!=(const iterator &iter) const -> bool;
         friend class Matrix;
@@ -409,11 +411,12 @@ auto Matrix<T, I, J>::det() const -> T
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::is_diagonal() -> bool
+[[nodiscard]] auto Matrix<T, I, J>::is_diagonal() -> bool
 {
-    if (I != J) [[unlikely]] { return false; }
+    if constexpr (I != J) [[unlikely]] { return false; }
 
-    for (auto m = 0; m < I; ++m) {
+    [[likely]] for (auto m = 0; m < I; ++m)
+    {
         for (auto n = 0; n < I; ++n) {
             if (m != n and this->array[m][n] != 0) { return false; }
         }
@@ -423,9 +426,9 @@ auto Matrix<T, I, J>::is_diagonal() -> bool
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::is_diagonal() const -> bool
+[[nodiscard]] auto Matrix<T, I, J>::is_diagonal() const -> bool
 {
-    if (I != J) { return false; }
+    if constexpr (I != J) { return false; }
 
     for (auto m = 0; m < I; ++m) {
         for (auto n = 0; n < I; ++n) {
@@ -711,8 +714,7 @@ auto Matrix<T, I, J>::iterator::operator*() const -> const T &
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++()
-    -> const Matrix<T, I, J>::iterator &
+auto Matrix<T, I, J>::iterator::operator++() -> Matrix<T, I, J>::iterator &
 {
     if (row != i - 1 and col != j - 1) { ++col; }
     if (col == j - 1) {
@@ -724,21 +726,7 @@ auto Matrix<T, I, J>::iterator::operator++()
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++() const
-    -> const Matrix<T, I, J>::iterator &
-{
-    if (row != I - 1 and col != J - 1) { ++col; }
-    if (col == J - 1) {
-        ++row;
-        col = 0;
-    }
-    std::cout << "dwa: " << row << " " << col << std::endl;
-    return *this;
-}
-
-template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++(int)
-    -> const Matrix<T, I, J>::iterator
+auto Matrix<T, I, J>::iterator::operator++(int) -> Matrix<T, I, J>::iterator
 {
     auto temp = *this;
     std::cout << "trzy: " << temp.row << " " << temp.col << std::endl;
@@ -749,21 +737,6 @@ auto Matrix<T, I, J>::iterator::operator++(int)
         temp.col = 0;
     }
     std::cout << "trzy: " << temp.row << " " << temp.col << std::endl;
-
-    return temp;
-}
-
-template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++(int) const
-    -> const Matrix<T, I, J>::iterator
-{
-    auto temp = *this;
-    if (row != I - 1 and col != J - 1) { ++temp.col; }
-    if (col == J - 1) {
-        ++temp.row;
-        temp.col = 0;
-    }
-    std::cout << "cztery: " << temp.row << " " << temp.col << std::endl;
 
     return temp;
 }
