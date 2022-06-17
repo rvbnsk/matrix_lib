@@ -256,7 +256,7 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::operator=(const Matrix<T, I, J> &array)
     -> Matrix<T, I, J> &
 {
-    if (&array != this) {
+    if constexpr (&array != this) {
         for (auto i = 0; i < I; ++i) {
             for (auto j = 0; j < J; ++j) {
                 this->array[i][j] = array.array[i][j];
@@ -413,7 +413,7 @@ auto Matrix<T, I, J>::det() const -> T
 template <Arithmetic T, std::size_t I, std::size_t J>
 [[nodiscard]] auto Matrix<T, I, J>::is_diagonal() -> bool
 {
-    if constexpr (I != J) [[unlikely]] { return false; }
+    if constexpr (I != J) { return false; }
 
     [[likely]] for (auto m = 0; m < I; ++m)
     {
