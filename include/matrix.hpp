@@ -44,6 +44,12 @@ concept Scalar = std::is_scalar_v<U> and requires (T t, U u)
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
+class Row;
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+class Crow;
+
+template <Arithmetic T, std::size_t I, std::size_t J>
 class Matrix {
    private:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
@@ -52,50 +58,6 @@ class Matrix {
     static constexpr std::pair<std::size_t, std::size_t> size_{ I, J };
     static constexpr auto i = I;
     static constexpr auto j = J;
-
-    class Row {
-       private:
-        Matrix<T, I, J>& matrix;
-        std::vector<T> row;
-        std::size_t n_row;
-
-       public:
-        explicit Row(Matrix<T, I, J>& matrix, std::size_t n_row);
-        ~Row() = default;
-        Row(const Row& row) = default;
-        Row(Row&& row) noexcept = default;
-        constexpr auto operator=(const Row& row) -> Row&;
-        constexpr auto operator=(Row&& row) noexcept -> Row&;
-
-        auto operator[](std::size_t col) -> T&;
-        auto operator[](std::size_t col) const -> T&;
-
-        auto get_row() -> std::vector<T>;
-
-        friend class Matrix;
-    };
-
-    class Crow {
-       private:
-        const Matrix<T, I, J>& matrix;
-        std::vector<T> row;
-        std::size_t n_row;
-
-       public:
-        explicit Crow(const Matrix<T, I, J>& matrix, std::size_t n_row);
-        ~Crow() = default;
-        Crow(const Crow& row) = default;
-        Crow(Crow&& row) noexcept = default;
-        constexpr auto operator=(const Crow& row) -> Crow&;
-        constexpr auto operator=(Crow&& row) noexcept -> Crow&;
-
-        auto operator[](std::size_t col) -> const T&;
-        auto operator[](std::size_t col) const -> const T&;
-
-        auto get_row() -> std::vector<T>;
-
-        friend class Matrix;
-    };
 
    public:
     Matrix();
@@ -172,28 +134,14 @@ class Matrix {
     template <Arithmetic U, std::size_t A, std::size_t B>
     inline auto operator!=(const Matrix<U, A, B>& array) const -> bool;
 
-    auto operator[](std::size_t row) -> Row;
-    auto operator[](std::size_t row) const -> Crow;
+    auto operator[](std::size_t row) -> Row<T, I, J>;
+    auto operator[](std::size_t row) const -> Crow<T, I, J>;
     auto operator()(std::size_t row, std::size_t col) -> T&;
     auto operator()(std::size_t row, std::size_t col) const -> const T&;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
     friend auto operator<<(std::ostream& os, const Matrix<U, A, B>& array)
         -> std::ostream&;
-
-    template <Arithmetic U, std::size_t A, std::size_t B>
-    friend auto operator<<(std::ostream& os, const typename Matrix<U, A, B>::Row& row)
-        -> std::ostream&;
-
-
-    /*template <Arithmetic U, std::size_t A, std::size_t B>
-    friend auto operator<<(
-        std::ostream& os,
-        const typename Matrix<U, A, B>::Row& row) -> std::ostream&;*/
-
-    /*template <Arithmetic U, std::size_t A, std::size_t B>
-        friend auto operator<<(std::ostream &os, const Crow &row)
-            -> std::ostream &;*/
 
     class iterator {
        private:
@@ -216,6 +164,58 @@ class Matrix {
     auto begin() const -> iterator;
     auto end() -> iterator;
     auto end() const -> iterator;
+};
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+class Row {
+    private:
+    Matrix<T, I, J>& matrix;
+    std::vector<T> row;
+    std::size_t n_row;
+
+    public:
+    explicit Row(Matrix<T, I, J>& matrix, std::size_t n_row);
+    ~Row() = default;
+    Row(const Row& row) = default;
+    Row(Row&& row) noexcept = default;
+    constexpr auto operator=(const Row& row) -> Row&;
+    constexpr auto operator=(Row&& row) noexcept -> Row&;
+
+    auto operator[](std::size_t col) -> T&;
+    auto operator[](std::size_t col) const -> T&;
+
+    auto get_row() -> std::vector<T>&;
+    auto get_row() const -> const std::vector<T>&;
+
+    template <Arithmetic U, std::size_t A, std::size_t B>
+    friend auto operator<<(std::ostream& os, const Row& row)
+        -> std::ostream&;
+};
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+class Crow {
+    private:
+    const Matrix<T, I, J>& matrix;
+    std::vector<T> row;
+    std::size_t n_row;
+
+    public:
+    explicit Crow(const Matrix<T, I, J>& matrix, std::size_t n_row);
+    ~Crow() = default;
+    Crow(const Crow& row) = default;
+    Crow(Crow&& row) noexcept = default;
+    constexpr auto operator=(const Crow& row) -> Crow&;
+    constexpr auto operator=(Crow&& row) noexcept -> Crow&;
+
+    auto operator[](std::size_t col) -> const T&;
+    auto operator[](std::size_t col) const -> const T&;
+
+    auto get_row() -> std::vector<T>&;
+    auto get_row() const -> const std::vector<T>&;
+
+    template <Arithmetic U, std::size_t A, std::size_t B>
+    friend auto operator<<(std::ostream& os, const Crow& row)
+        -> std::ostream&;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -666,69 +666,81 @@ inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B>& array) const
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::operator[](std::size_t row) -> Row
+auto Matrix<T, I, J>::operator[](std::size_t row) -> Row<T, I, J>
 {
     if (row > (I - 1) or row < 0) { throw "Matrix::invalid row number"; }
     return Row(*this, row);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::operator[](std::size_t row) const -> Crow
+auto Matrix<T, I, J>::operator[](std::size_t row) const -> Crow<T, I, J>
 {
     if (row > (I - 1) or row < 0) { throw "Matrix::invalid row number"; }
     return Crow(*this, row);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Row::Row(Matrix<T, I, J>& matrix, std::size_t n_row)
+Row<T, I, J>::Row(Matrix<T, I, J>& matrix, std::size_t n_row)
     : matrix(matrix), n_row(n_row)
 {
     for (auto i = 0; i < J; ++i) { row.emplace_back(matrix(n_row, i)); }
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::Row::operator[](std::size_t col) -> T&
+auto Row<T, I, J>::operator[](std::size_t col) -> T&
 {
     if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(n_row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::Row::operator[](std::size_t col) const -> T&
+auto Row<T, I, J>::operator[](std::size_t col) const -> T&
 {
     if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(n_row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::Row::get_row() -> std::vector<T>
+auto Row<T, I, J>::get_row() -> std::vector<T>&
 {
     return row;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Crow::Crow(const Matrix<T, I, J>& matrix, std::size_t n_row)
+auto Row<T, I, J>::get_row() const -> const std::vector<T>&
+{
+    return row;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+Crow<T, I, J>::Crow(const Matrix<T, I, J>& matrix, std::size_t n_row)
     : matrix(matrix), n_row(n_row)
 {
     for (auto i = 0; i < J; ++i) { row.emplace_back(matrix(n_row, i)); }
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::Crow::operator[](std::size_t col) -> const T&
+auto Crow<T, I, J>::operator[](std::size_t col) -> const T&
 {
     if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(n_row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::Crow::operator[](std::size_t col) const -> const T&
+auto Crow<T, I, J>::operator[](std::size_t col) const -> const T&
 {
     if (col > (J - 1) or col < 0) { throw "Matrix::invalid col number"; }
     return matrix(n_row, col);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::Crow::get_row() -> std::vector<T>
+auto Crow<T, I, J>::get_row() -> std::vector<T>&
+{
+    return row;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Crow<T, I, J>::get_row() const -> const std::vector<T>&
 {
     return row;
 }
@@ -758,7 +770,19 @@ auto operator<<(std::ostream& os, const Matrix<U, A, B>& array) -> std::ostream&
 }
 
 template <Arithmetic U, std::size_t A, std::size_t B>
-auto operator<<(std::ostream& os, const typename Matrix<U, A, B>::Row& row)
+auto operator<<(std::ostream& os, const Row<U, A, B>& row)
+    -> std::ostream&
+{
+    for (const auto& elem : row.get_row()) {
+        os << elem;
+        os << " ";
+    }
+
+    return os;
+}
+
+template <Arithmetic U, std::size_t A, std::size_t B>
+auto operator<<(std::ostream& os, const Crow<U, A, B>& row)
     -> std::ostream&
 {
     for (const auto& elem : row.get_row()) {
