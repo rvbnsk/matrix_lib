@@ -1,7 +1,7 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
-//@TODO: think about changing throw to sth else
+//@TODO: think about changing throw to sth else or derive from std::exceptions
 //@TODO: add [[likely]] and [[unlikely]] (and other) attributes to hot places as
 // in is_diagonal()
 //@TODO: add const interator
@@ -10,6 +10,10 @@
 //@TODO: add reverse iterator, add const reverse iterator
 //@TODO: fix operator not working on last element
 //@TODO: fix iterator for const objects
+//@TODO: supply construction " << (m1 * m2) "
+//@TODO: add operators and math functions for const matrices
+//@TODO: fix multiplication for different result matrix dimension than base one
+//@TODO: change array to dynamically alocated
 
 #include <concepts>
 #include <iostream>
@@ -31,7 +35,7 @@ concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 {
     type + type;
     type - type;
-    type* type;
+    type * type;
     type == type;
     type != type;
 };
@@ -39,7 +43,7 @@ concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 template <typename T, typename U>
 concept Scalar = std::is_scalar_v<U> and requires(T t, U u)
 {
-    t* u;
+    t * u;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -63,8 +67,8 @@ class Matrix {
     ~Matrix() = default;
 
     explicit Matrix(const T& value);
-    Matrix(std::initializer_list<T> elems);
-    Matrix(std::initializer_list<std::initializer_list<T>> elems);
+    explicit Matrix(std::initializer_list<T> elems);
+    explicit Matrix(std::initializer_list<std::initializer_list<T>> elems);  
 
     template <Arithmetic U>
     explicit Matrix(const U& value);
@@ -157,7 +161,6 @@ class Matrix {
         using pointer = T*;
         using reference = T&;
 
-       public:
         iterator(Matrix<T, I, J>& matrix, std::size_t row, std::size_t col);
         iterator(
             const Matrix<T, I, J>& matrix,
@@ -185,7 +188,6 @@ class Matrix {
         using pointer = T*;
         using reference = T&;
 
-       public:
         const_iterator(
             Matrix<T, I, J>& matrix,
             std::size_t row,
@@ -216,7 +218,6 @@ class Matrix {
         using pointer = T*;
         using reference = T&;
 
-       public:
         reverse_iterator(
             Matrix<T, I, J>& matrix,
             std::size_t row,
@@ -243,7 +244,6 @@ class Matrix {
         using pointer = T*;
         using reference = T&;
 
-       public:
         const_reverse_iterator(
             Matrix<T, I, J>& matrix,
             std::size_t row,
@@ -351,7 +351,8 @@ Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
                   << std::endl;
     }
     else {
-        auto i = 0, j = 0;
+        auto i = 0;
+        auto j = 0;
         for (const auto& elem : elems) {
             array[i][j] = elem;
             if (j != J - 1) { ++j; }
@@ -377,7 +378,8 @@ Matrix<T, I, J>::Matrix(std::initializer_list<std::initializer_list<T>> elems)
         }
     }
 
-    auto i = 0, j = 0;
+    auto i = 0;
+    auto j = 0;
     for (const auto& row : elems) {
         for (const auto& item : row) {
             array[i][j] = item;
