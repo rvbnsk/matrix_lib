@@ -4,7 +4,8 @@
 // TODO: add throwing exceptions where needed
 // TODO: finish all ctors for Row and Crow classes
 // TODO: add secondary method operating on iterators
-// TODO: add operators and math functions for const matrices
+// TODO: change operators only for const members (non const members works also
+// with const methods)
 // TODO: fix multiplication for different result matrix dimension than base one
 // TODO: change array to dynamically alocated
 // TODO: fix det
@@ -43,7 +44,7 @@ concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 {
     type + type;
     type - type;
-    type* type;
+    type * type;
     type == type;
     type != type;
 };
@@ -51,7 +52,7 @@ concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 template <typename T, typename U>
 concept Scalar = std::is_scalar_v<U> and requires(T t, U u)
 {
-    t* u;
+    t * u;
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -105,6 +106,7 @@ class Matrix {
     void insert(const T& element);
     void sort();
     auto transpoze() -> Matrix<T, I, J>;
+    auto transpoze() const -> Matrix<T, I, J>;
     auto power(const unsigned int& power) -> Matrix<T, I, J>&;
     auto det() -> T;
     auto det() const -> T;
@@ -113,11 +115,17 @@ class Matrix {
     void ones();
     void ones() const;
     constexpr auto size() -> std::pair<std::size_t, std::size_t>;
+    constexpr auto size() const -> std::pair<std::size_t, std::size_t>;
     constexpr auto size_i() -> std::size_t;
+    constexpr auto size_i() const -> std::size_t;
     constexpr auto size_j() -> std::size_t;
+    constexpr auto size_j() const -> std::size_t;
+
+    // template <Arithmetic U, std::size_t A, std::size_t B>
+    // auto operator+(const Matrix<U, A, B>& array) -> Matrix<T, I, J>;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
-    auto operator+(const Matrix<U, A, B>& array) -> Matrix<T, I, J>;
+    auto operator+(const Matrix<U, A, B>& array) const -> Matrix<T, I, J>;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
     auto operator+=(const Matrix<U, A, B>& array) -> Matrix<T, I, J>&;
@@ -126,16 +134,25 @@ class Matrix {
     auto operator-(const Matrix<U, A, B>& array) -> Matrix<T, I, J>;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
+    auto operator-(const Matrix<U, A, B>& array) const -> Matrix<T, I, J>;
+
+    template <Arithmetic U, std::size_t A, std::size_t B>
     auto operator-=(const Matrix<U, A, B>& array) -> Matrix<T, I, J>&;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
     auto operator*(const Matrix<U, A, B>& array) -> Matrix<T, I, B>;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
+    auto operator*(const Matrix<U, A, B>& array) const -> Matrix<T, I, B>;
+
+    template <Arithmetic U, std::size_t A, std::size_t B>
     auto operator*=(const Matrix<U, A, B>& array) -> Matrix<T, I, B>&;
 
     template <Scalar<T> U>
     auto operator*(const U& scalar) -> Matrix<T, I, J>;
+
+    template <Scalar<T> U>
+    auto operator*(const U& scalar) const -> Matrix<T, I, J>;
 
     template <Scalar<T> U>
     auto operator*=(const U& scalar) -> Matrix<T, I, J>&;
@@ -526,7 +543,18 @@ auto Matrix<T, I, J>::transpoze() -> Matrix<T, I, J>
 {
     Matrix<T, I, J> result;
     for (auto i = 0; i < I; ++i) {
-        for (auto j = 0; j < J; ++j) { result.array[i][j] = this->array[i][j]; }
+        for (auto j = 0; j < J; ++j) { result.array[i][j] = this->array[j][i]; }
+    }
+
+    return result;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::transpoze() const -> Matrix<T, I, J>
+{
+    Matrix<T, I, J> result;
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) { result.array[i][j] = this->array[j][i]; }
     }
 
     return result;
@@ -661,13 +689,32 @@ constexpr auto Matrix<T, I, J>::size() -> std::pair<std::size_t, std::size_t>
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
+constexpr auto Matrix<T, I, J>::size() const
+    -> std::pair<std::size_t, std::size_t>
+{
+    return size_;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::size_i() -> std::size_t
 {
     return I;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
+constexpr auto Matrix<T, I, J>::size_i() const -> std::size_t
+{
+    return I;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::size_j() -> std::size_t
+{
+    return J;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+constexpr auto Matrix<T, I, J>::size_j() const -> std::size_t
 {
     return J;
 }
@@ -680,9 +727,27 @@ auto Matrix<T, I, J>::power(const unsigned int& power) -> Matrix<T, I, J>&
     return *this;
 }
 
-template <Arithmetic T, std::size_t I, std::size_t J>
+/*template <Arithmetic T, std::size_t I, std::size_t J>
 template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator+(const Matrix<U, A, B>& array) -> Matrix<T, I, J>
+{
+    static_assert(I == A and J == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
+
+    Matrix result;
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            result.array[i][j] = this->array[i][j] + array.array[i][j];
+        }
+    }
+
+    return result;
+}*/
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+template <Arithmetic U, std::size_t A, std::size_t B>
+auto Matrix<T, I, J>::operator+(const Matrix<U, A, B>& array) const
+    -> Matrix<T, I, J>
 {
     static_assert(I == A and J == B, "Matrix::invalid size");
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
@@ -713,6 +778,24 @@ auto Matrix<T, I, J>::operator+=(const Matrix<U, A, B>& array)
 template <Arithmetic T, std::size_t I, std::size_t J>
 template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator-(const Matrix<U, A, B>& array) -> Matrix<T, I, J>
+{
+    static_assert(I == A and J == B, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
+
+    Matrix result;
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            result.array[i][j] = this->array[i][j] - array.array[i][j];
+        }
+    }
+
+    return result;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+template <Arithmetic U, std::size_t A, std::size_t B>
+auto Matrix<T, I, J>::operator-(const Matrix<U, A, B>& array) const
+    -> Matrix<T, I, J>
 {
     static_assert(I == A and J == B, "Matrix::invalid size");
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
@@ -760,6 +843,27 @@ auto Matrix<T, I, J>::operator*(const Matrix<U, A, B>& array) -> Matrix<T, I, B>
     return result;
 }
 
+template <Arithmetic T, std::size_t I, std::size_t J>
+template <Arithmetic U, std::size_t A, std::size_t B>
+auto Matrix<T, I, J>::operator*(const Matrix<U, A, B>& array) const
+    -> Matrix<T, I, B>
+{
+    static_assert(J == A, "Matrix::invalid size");
+    static_assert(is_same_v<T, U>, "Matrix::invalid type");
+
+    Matrix<T, I, B> result{};
+    for (auto i = 0; i < I; ++i) {
+        for (auto j = 0; j < B; ++j) {
+            result.array[i][j] = 0;
+            for (auto k = 0; k < B; ++k) {
+                result.array[i][j] += this->array[i][k] * array.array[k][j];
+            }
+        }
+    }
+
+    return result;
+}
+
 template <Arithmetic T, std::size_t I, size_t J>
 template <Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator*=(const Matrix<U, A, B>& array)
@@ -776,6 +880,20 @@ auto Matrix<T, I, J>::operator*=(const Matrix<U, A, B>& array)
 template <Arithmetic T, std::size_t I, std::size_t J>
 template <Scalar<T> U>
 auto Matrix<T, I, J>::operator*(const U& scalar) -> Matrix<T, I, J>
+{
+    Matrix result;
+    for (auto i = 0; i < J; ++i) {
+        for (auto j = 0; j < J; ++j) {
+            result.array[i][j] = this->array[i][j] * scalar;
+        }
+    }
+
+    return result;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+template <Scalar<T> U>
+auto Matrix<T, I, J>::operator*(const U& scalar) const -> Matrix<T, I, J>
 {
     Matrix result;
     for (auto i = 0; i < J; ++i) {
