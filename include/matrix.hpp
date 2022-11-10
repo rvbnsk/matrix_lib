@@ -12,6 +12,7 @@
 // TODO: check possibilities of making one std::initializer_list ctor because
 // sometimes use of ctor could be ambiguous, example: mtl::Matrix<int, 2, 1> m1
 // = { {3}, {7} };
+// TODO: e.g. mtl::Matrix * std::vector
 
 #include <concepts>
 #include <iostream>
@@ -39,6 +40,7 @@ struct invalid_argument_input : public std::invalid_argument {
     using invalid_argument::invalid_argument;
 };
 
+// clang-format off
 template <typename T>
 concept Arithmetic = is_arithmetic_v<T> and requires(T type)
 {
@@ -54,6 +56,7 @@ concept Scalar = std::is_scalar_v<U> and requires(T t, U u)
 {
     t * u;
 };
+// clang-format on
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 class Row;
@@ -103,17 +106,17 @@ class Matrix {
     constexpr auto operator=(Matrix<U, A, B>&& array) noexcept
         -> Matrix<T, I, J>&;
 
-    void insert(const T& element);
-    void sort();
-    auto transpoze() -> Matrix<T, I, J>;
-    auto transpoze() const -> Matrix<T, I, J>;
+    auto insert(const T& element);
+    auto sort();
+    auto transpose() -> Matrix<T, I, J>;
+    auto transpose() const -> Matrix<T, I, J>;
     auto power(const unsigned int& power) -> Matrix<T, I, J>&;
     auto det() -> T;
     auto det() const -> T;
     auto is_diagonal() -> bool;
     auto is_diagonal() const -> bool;
-    void ones();
-    void ones() const;
+    auto ones();
+    auto ones() const;
     constexpr auto size() -> std::pair<std::size_t, std::size_t>;
     constexpr auto size() const -> std::pair<std::size_t, std::size_t>;
     constexpr auto size_i() -> std::size_t;
@@ -167,7 +170,7 @@ class Matrix {
 
     auto operator[](std::size_t row) -> Row<T, I, J>;
     auto operator[](std::size_t row) const -> Crow<T, I, J>;
-    auto operator()(std::size_t row, std::size_t col) -> T;
+    auto operator()(std::size_t row, std::size_t col) -> T&;
     auto operator()(std::size_t row, std::size_t col) const -> const T;
 
     template <Arithmetic U, std::size_t A, std::size_t B>
@@ -526,7 +529,7 @@ constexpr auto Matrix<T, I, J>::operator=(Matrix<U, A, B>&& array) noexcept
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-void Matrix<T, I, J>::insert(const T& element)
+auto Matrix<T, I, J>::insert(const T& element)
 {
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { this->array[i][j] = element; }
@@ -534,12 +537,12 @@ void Matrix<T, I, J>::insert(const T& element)
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-void Matrix<T, I, J>::sort()
+auto Matrix<T, I, J>::sort()
 {
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::transpoze() -> Matrix<T, I, J>
+auto Matrix<T, I, J>::transpose() -> Matrix<T, I, J>
 {
     Matrix<T, I, J> result;
     for (auto i = 0; i < I; ++i) {
@@ -550,7 +553,7 @@ auto Matrix<T, I, J>::transpoze() -> Matrix<T, I, J>
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::transpoze() const -> Matrix<T, I, J>
+auto Matrix<T, I, J>::transpose() const -> Matrix<T, I, J>
 {
     Matrix<T, I, J> result;
     for (auto i = 0; i < I; ++i) {
@@ -667,7 +670,7 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-void Matrix<T, I, J>::ones()
+auto Matrix<T, I, J>::ones()
 {
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { array[i][j] = 0; }
@@ -675,7 +678,7 @@ void Matrix<T, I, J>::ones()
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-void Matrix<T, I, J>::ones() const
+auto Matrix<T, I, J>::ones() const
 {
     for (auto i = 0; i < I; ++i) {
         for (auto j = 0; j < J; ++j) { *this(i, j) = 0; }
@@ -1041,7 +1044,7 @@ auto Crow<T, I, J>::get_row() const -> const std::vector<T>&
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) -> T
+auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) -> T&
 {
     if (row > (I - 1) or row < 0) {
         throw out_of_range_input{"Matrix::invalid row number"};
