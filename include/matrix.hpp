@@ -13,6 +13,7 @@
 // sometimes use of ctor could be ambiguous, example: mtl::Matrix<int, 2, 1> m1
 // = { {3}, {7} };
 // TODO: e.g. mtl::Matrix * std::vector
+// TODO: add namespace detail and row
 
 #include <concepts>
 #include <iostream>
@@ -58,12 +59,24 @@ concept Scalar = std::is_scalar_v<U> and requires(T t, U u)
 };
 // clang-format on
 
+/**
+ * @brief Helper class for storing entire row from matrix
+*/
 template <Arithmetic T, std::size_t I, std::size_t J>
 class Row;
 
+/**
+ * @brief Helper class for storing entire const row from const matrix
+*/
 template <Arithmetic T, std::size_t I, std::size_t J>
 class Crow;
 
+/**
+ * @brief Main class for matrix storage
+ * @tparam T type of value's being stored
+ * @tparam I number of rows
+ * @tparam J number of cols
+*/
 template <Arithmetic T, std::size_t I, std::size_t J>
 class Matrix {
    private:
@@ -74,12 +87,33 @@ class Matrix {
     static constexpr auto j = J;
 
    public:
+    /** 
+    * @brief Default constructor of mtl::Matrix<T, I, J>
+    */
     Matrix();
+
+    /** 
+    * @brief Default destructor of mtl::Matrix<T, I, J>
+    */
     ~Matrix() = default;
 
+    /**
+     * @brief Constructor with initialization matrix with custom value
+     * @param value initializator of matrix
+    */
     explicit Matrix(const T& value);
+
+    /**
+     * @brief Constructor for initializer list
+     * @param elems initializer list of elements
+    */
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     Matrix(std::initializer_list<T> elems);
+
+    /**
+     * @brief Constructor for initializer list
+     * @param elems initializer list of elements
+    */
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     Matrix(std::initializer_list<std::initializer_list<T>> elems);
 
