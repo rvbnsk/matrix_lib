@@ -12,7 +12,8 @@
 // = { {3}, {7} };
 // TODO: e.g. mtl::Matrix * std::vector
 // TODO: add namespace detail and row
-// TODO make operators == and != inline
+// TODO: make operators == and != inline
+// TODO: check comparison of different sized matrices
 
 #include <concepts>
 #include <iostream>
@@ -778,8 +779,10 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::transpose() -> Matrix<T, I, J>
 {
     Matrix<T, I, J> result;
-    for (auto i = 0; i < I; ++i) {
-        for (auto j = 0; j < J; ++j) { result.array[i][j] = this->array[j][i]; }
+    for (std::size_t i = 0; i < I; ++i) {
+        for (std::size_t j = 0; j < J; ++j) {
+            result.array[i][j] = this->array[j][i];
+        }
     }
 
     return result;
@@ -1120,7 +1123,7 @@ template <Arithmetic U, std::size_t A, std::size_t B>
 inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B>& matrix) const
     -> bool
 {
-    return not *this == matrix;
+    return (not *this == matrix);
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
