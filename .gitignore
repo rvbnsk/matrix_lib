@@ -1,2 +1,5 @@
-.vscode/
+build
+.vscode
+.idea
 /demo.cpp
+todo.txt

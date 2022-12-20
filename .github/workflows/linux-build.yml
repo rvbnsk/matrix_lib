@@ -30,6 +30,6 @@ jobs:
       - name: Format
         uses: DoozyX/clang-format-lint-action@v0.13
         with:
-          source: './include'
-          extensions: 'hpp'
+          source: './include ./test'
+          extensions: 'hpp,cpp'
           clangFormatVersion: 13

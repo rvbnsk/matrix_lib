@@ -1,20 +1,6 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
-// TODO: add throwing exceptions where needed
-// TODO: finish all ctors for Row and Crow classes
-// TODO: add secondary method operating on iterators
-// TODO: fix multiplication for different result matrix dimension than base one
-// TODO: change array to dynamically allocated
-// TODO: fix det
-// TODO: check possibilities of making one std::initializer_list ctor because
-// sometimes use of ctor could be ambiguous, example: mtl::Matrix<int, 2, 1> m1
-// = { {3}, {7} };
-// TODO: e.g. mtl::Matrix * std::vector
-// TODO: add namespace detail and row
-// TODO: make operators == and != inline
-// TODO: check comparison of different sized matrices
-
 #include <concepts>
 #include <iostream>
 #include <stdexcept>
@@ -24,14 +10,17 @@
 
 namespace mtl {
 
-template <class T>
-inline constexpr auto is_arithmetic_v = std::is_arithmetic<T>::value;
+namespace {
 
-template <class T, class U>
-inline constexpr auto is_same_v = std::is_same<T, U>::value;
+template <class At_>
+static inline constexpr auto is_arithmetic_v = std::is_arithmetic<At_>::value;
 
-template <class T, class U>
-inline constexpr auto is_convertible_v = std::is_convertible<T, U>::value;
+template <class At_, class Au_>
+static inline constexpr auto is_same_v = std::is_same<At_, Au_>::value;
+
+template <class At_, class Au_>
+static inline constexpr auto is_convertible_v =
+    std::is_convertible<Au_, Au_>::value;
 
 struct out_of_range_input : public std::out_of_range {
     using out_of_range::out_of_range;
@@ -42,8 +31,8 @@ struct invalid_argument_input : public std::invalid_argument {
 };
 
 // clang-format off
-template <typename T>
-concept Arithmetic = is_arithmetic_v<T> and requires(T type)
+template <typename At_>
+concept Arithmetic = is_arithmetic_v<At_> and requires(At_ type)
 {
     type + type;
     type - type;
@@ -52,12 +41,14 @@ concept Arithmetic = is_arithmetic_v<T> and requires(T type)
     type != type;
 };
 
-template <typename T, typename U>
-concept Scalar = std::is_scalar_v<U> and requires(T t, U u)
+template <class At_, class Au_>
+concept Scalar = std::is_scalar_v<Au_> and requires(At_ t, Au_ u)
 {
     t * u;
 };
 // clang-format on
+
+}  // namespace
 
 /**
  * @brief Helper class for storing entire row from matrix
@@ -81,20 +72,21 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 class Matrix {
    private:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
-    T array[I][J];
-    static constexpr std::pair<std::size_t, std::size_t> size_{I, J};
+    T** array{nullptr};
+    std::pair<std::size_t, std::size_t> size_{I, J};
+    bool has_been_reallocated{false};
 
    public:
     /**
      * @brief Default constructor of mtl::Matrix<T, I, J>
      * @see Matrix(const T& value)
      */
-    Matrix();
+    constexpr Matrix();
 
     /**
      * @brief Default destructor of mtl::Matrix<T, I, J>
      */
-    ~Matrix() = default;
+    constexpr ~Matrix();
 
     /**
      * @brief Constructor with initialization matrix with custom value
@@ -189,6 +181,12 @@ class Matrix {
     constexpr auto underlying_array() -> T**;
 
     /**
+     * @brief Get underlying array for const object
+     * @return underlying array pointer
+     */
+    constexpr auto underlying_array() const -> T**;
+
+    /**
      * @brief Fill matrix with certain value
      * @param element value to fill
      */
@@ -251,6 +249,16 @@ class Matrix {
      * @brief fill matrix with "1"
      */
     auto ones() const;
+
+    auto alloc();
+    auto alloc() const;
+    auto alloc(std::size_t, std::size_t);
+    auto alloc(std::size_t, std::size_t) const;
+    auto realloc(std::size_t, std::size_t);
+    auto realloc(std::size_t, std::size_t) const;
+
+    auto dealloc();
+    auto dealloc() const;
 
     /**
      * @brief get size i (rows) and j (cols) of matrix
@@ -325,7 +333,8 @@ class Matrix {
      * @param vector to multiply
      * @return result of multiplication of matrix and vector
      */
-    auto operator*=(const std::vector<T>& vector) -> Matrix<T, I, J>&;
+    template <Scalar<T> U>
+    auto operator*=(const std::vector<U>& vector) -> Matrix<T, I, J>&;
 
     /**
      * @brief operator^ overload
@@ -578,16 +587,35 @@ class Crow {
 };
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Matrix()
+constexpr Matrix<T, I, J>::Matrix()
 {
+    array = new T*[I];
+    for (std::size_t i = 0; i < I; ++i) { array[i] = new T[J]; }
+
     for (std::size_t i = 0; i < I; ++i) {
         for (std::size_t j = 0; j < J; ++j) { this->array[i][j] = 0; }
     }
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
+constexpr Matrix<T, I, J>::~Matrix()
+{
+    if (not has_been_reallocated) {
+        for (std::size_t i = 0; i < I; ++i) { delete[] array[i]; }
+        delete[] array;
+        array = nullptr;
+    }
+    else {
+        for (std::size_t i = 0; i < size_.first; ++i) { delete[] array[i]; }
+        delete[] array;
+        array = nullptr;
+    }
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix(const T& value)
 {
+    this->alloc();
     for (std::size_t i = 0; i < I; ++i) {
         for (std::size_t j = 0; j < J; ++j) { this->array[i][j] = value; }
     }
@@ -596,6 +624,7 @@ Matrix<T, I, J>::Matrix(const T& value)
 template <Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
 {
+    this->alloc();
     this->ones();
     if (elems.size() != I * J) [[unlikely]] {
         std::cout << "Matrix::Matrix() cannot initialize matrix with incorrect "
@@ -648,18 +677,24 @@ template <Arithmetic T, std::size_t I, std::size_t J>
 template <Arithmetic U>
 Matrix<T, I, J>::Matrix(const U& value)
 {
+    this->alloc();
+
     static_assert(
         std::is_convertible_v<T, U>,
         "Matrix::Matrix(), type cannot be used to initialize matrix");
 
     for (auto i = 0; i < I; ++i) {
-        for (auto j = 0; j < J; ++j) { this->array[i][j] = (T)value; }
+        for (auto j = 0; j < J; ++j) {
+            this->array[i][j] = static_cast<T>(value);
+        }
     }
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& array)
 {
+    this->alloc();
+
     for (std::size_t i = 0; i < I; ++i) {
         for (std::size_t j = 0; j < J; ++j) {
             this->array[i][j] = array.array[i][j];
@@ -669,23 +704,23 @@ Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& array)
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 template <Arithmetic U, std::size_t A, std::size_t B>
-Matrix<T, I, J>::Matrix(const Matrix<U, A, B>& array)
+Matrix<T, I, J>::Matrix(const Matrix<U, A, B>& matrix)
 {
     static_assert(is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I == A && J == B, "Matrix::invalid size");
-    *this = array;
+    static_assert(I == A and J == B, "Matrix::invalid size");
+    *this = matrix;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Matrix(Matrix<T, I, J>&& array) noexcept
+Matrix<T, I, J>::Matrix(Matrix<T, I, J>&& matrix) noexcept
 {
     for (std::size_t i = 0; i < I; ++i) {
         for (std::size_t j = 0; j < J; ++j) {
-            this->array[i][j] = array.array[i][j];
+            this->array[i][j] = matrix.array[i][j];
         }
     }
 
-    array.~Matrix();
+    matrix.~Matrix();
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -758,6 +793,12 @@ constexpr auto Matrix<T, I, J>::operator=(Matrix<U, A, B>&& matrix) noexcept
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::underlying_array() -> T**
+{
+    return array;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+constexpr auto Matrix<T, I, J>::underlying_array() const -> T**
 {
     return array;
 }
@@ -924,6 +965,62 @@ auto Matrix<T, I, J>::ones() const
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::alloc()
+{
+    array = new T*[I];
+    for (std::size_t i = 0; i < I; ++i) { array[i] = new T[J]; }
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::alloc() const
+{
+    array = new T*[I];
+    for (std::size_t i = 0; i < I; ++i) { array[i] = new T[J]; }
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::alloc(std::size_t i_, std::size_t j_)
+{
+    array = new T*[i_];
+    for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::alloc(std::size_t i_, std::size_t j_) const
+{
+    array = new T*[i_];
+    for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::realloc(std::size_t i_, std::size_t j_)
+{
+    for (std::size_t i = 0; i < size_.first; ++i) { delete[] array[i]; }
+    delete[] array;
+    array = nullptr;
+
+    array = new T*[i_];
+    for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+
+    has_been_reallocated = true;
+    size_ = std::make_pair(i_, j_);
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+auto Matrix<T, I, J>::realloc(std::size_t i_, std::size_t j_) const
+{
+    for (std::size_t i = 0; i < size_.first; ++i) { delete[] array[i]; }
+    delete[] array;
+    array = nullptr;
+
+    array = new T*[i_];
+    for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+
+    has_been_reallocated = true;
+    size_ = std::make_pair(i_, j_);
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::size() -> std::pair<std::size_t, std::size_t>
 {
     return size_;
@@ -939,25 +1036,25 @@ constexpr auto Matrix<T, I, J>::size() const
 template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::size_i() -> std::size_t
 {
-    return I;
+    return size_.first;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::size_i() const -> std::size_t
 {
-    return I;
+    return size_.first;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::size_j() -> std::size_t
 {
-    return J;
+    return size_.second;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::size_j() const -> std::size_t
 {
-    return J;
+    return size_.second;
 }
 
 template <Arithmetic T, std::size_t I, std::size_t J>
@@ -1008,7 +1105,7 @@ auto Matrix<T, I, J>::operator*=(const Matrix<U, A, B>& matrix)
     -> Matrix<T, I, B>&
 {
     static_assert(J == A, "Matrix::invalid size");
-    static_assert(is_same_v<T, U>, "Matrix::invalid type");
+    static_assert(is_convertible_v<T, U>, "Matrix::invalid type");
 
     // realloc needs to be done on this
     for (auto i = 0; i < I; ++i) {
@@ -1030,6 +1127,29 @@ auto Matrix<T, I, J>::operator*=(const U& scalar) -> Matrix<T, I, J>&
     for (std::size_t i = 0; i < J; ++i) {
         for (std::size_t j = 0; j < J; ++j) {
             this->array[i][j] = this->array[i][j] * scalar;
+        }
+    }
+
+    return *this;
+}
+
+template <Arithmetic T, std::size_t I, std::size_t J>
+template <Scalar<T> U>
+auto Matrix<T, I, J>::operator*=(const std::vector<U>& vector)
+    -> Matrix<T, I, J>&
+{
+    // constexpr auto mult_col_dim = 1;
+    static_assert(J == vector.size(), "Matrix::invalid vector size");
+    static_assert(is_convertible_v<T, U>, "Matrix::invalid type");
+    const auto temp = *this;
+
+    // reallocation to <T, J, 1>
+    // this->realloc(J, 1);
+
+    for (std::size_t i = 0; i < I; ++i) {
+        array[i][0] = 0;
+        for (std::size_t j = 0; j < J; ++j) {
+            array[i][0] += temp[i][j] * vector[j];
         }
     }
 
