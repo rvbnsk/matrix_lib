@@ -1238,13 +1238,15 @@ inline auto Matrix<T, I, J>::operator==(const Matrix<U, A, B>& matrix) const
     return true;
 }
 
+// clang-format off
 template <Arithmetic T, std::size_t I, std::size_t J>
 template <Arithmetic U, std::size_t A, std::size_t B>
 inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B>& matrix) const
     -> bool
 {
-    return (not *this == matrix);
+    return not (*this == matrix);
 }
+// clang-format on
 
 template <Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::operator[](std::size_t row) -> Row<T, I, J>
