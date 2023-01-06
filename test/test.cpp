@@ -1,6 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-
-#include "../include/matrix.hpp"
+#include <matrix.hpp>
 
 // TODO: transposition of different sized matrices
 // TODO: inequal matrices
@@ -25,7 +24,12 @@ TEST_CASE("Comparison")
     {
         constexpr auto to_fill = 5;
         mtl::Matrix<int, 4, 4> matrix1(to_fill);
-        mtl::Matrix<int, 4, 4> matrix2(to_fill);
+        mtl::Matrix<int, 4, 4> matrix2{
+            {5, 5, 5, 5},
+            {5, 5, 5, 5},
+            {5, 5, 5, 5},
+            {5, 5, 5, 5}};
+
         REQUIRE(matrix1 == matrix2);
     }
 }
