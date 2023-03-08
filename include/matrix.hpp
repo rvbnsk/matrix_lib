@@ -1,6 +1,7 @@
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
+#include <array>
 #include <concepts>
 #include <iostream>
 #include <stdexcept>
@@ -249,11 +250,6 @@ class Matrix {
      */
     auto ones();
 
-    /**
-     * @brief fill matrix with "1"
-     */
-    auto ones() const;
-
     auto alloc();
     auto alloc() const;
     auto alloc(std::size_t, std::size_t);
@@ -267,37 +263,19 @@ class Matrix {
      * @brief get size i (rows) and j (cols) of matrix
      * @return size: pair of i and j
      */
-    constexpr auto size() -> std::pair<std::size_t, std::size_t>;
-
-    /**
-     * @brief get size i (rows) and j (cols) of matrix
-     * @return size: pair of i and j
-     */
-    constexpr auto size() const -> std::pair<std::size_t, std::size_t>;
+    constexpr auto size() const noexcept -> std::pair<std::size_t, std::size_t>;
 
     /**
      * @brief get size i (number of rows)
      * @return number of rows
      */
-    constexpr auto size_i() -> std::size_t;
-
-    /**
-     * @brief get size i (number of rows)
-     * @return number of rows
-     */
-    constexpr auto size_i() const -> std::size_t;
+    constexpr auto size_i() const noexcept -> std::size_t;
 
     /**
      * @brief get size j (number of cols)
      * @return number of cols
      */
-    constexpr auto size_j() -> std::size_t;
-
-    /**
-     * @brief get size j (number of cols)
-     * @return number of cols
-     */
-    constexpr auto size_j() const -> std::size_t;
+    constexpr auto size_j() const noexcept -> std::size_t;
 
     /**
      * @brief operator+= overload
@@ -559,7 +537,6 @@ class Row {
     constexpr auto operator=(Row&& row) noexcept -> Row&;
 
     auto operator[](std::size_t col) -> T&;
-    auto operator[](std::size_t col) const -> T&;
 
     auto get_row() -> std::vector<T>&;
     auto get_row() const -> const std::vector<T>&;
@@ -583,7 +560,6 @@ class Crow {
     constexpr auto operator=(const Crow& row) -> Crow&;
     constexpr auto operator=(Crow&& row) noexcept -> Crow&;
 
-    auto operator[](std::size_t col) -> const T&;
     auto operator[](std::size_t col) const -> const T&;
 
     auto get_row() -> std::vector<T>&;
@@ -626,10 +602,10 @@ Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
 {
     this->alloc();
     this->ones();
-    if (elems.size() != I * J) [[unlikely]] {
-        std::cout << "Matrix::Matrix() cannot initialize matrix with incorrect "
-                     "number of elements."
-                  << std::endl;
+    if (elems.size() != (I * J)) [[unlikely]] {
+        throw detail::exceptions::invalid_argument_input{
+            "Matrix::Matrix() cannot initialize matrix with incorrect "
+            "number of elements."};
     }
     else [[likely]] {
         auto i = 0;
@@ -949,14 +925,6 @@ auto Matrix<T, I, J>::ones()
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::ones() const
-{
-    for (auto i = 0; i < I; ++i) {
-        for (auto j = 0; j < J; ++j) { *this(i, j) = 0; }
-    }
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::alloc()
 {
     array = new T*[I];
@@ -1015,38 +983,20 @@ auto Matrix<T, I, J>::dealloc() const
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::size() -> std::pair<std::size_t, std::size_t>
-{
-    return size_;
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::size() const
+constexpr auto Matrix<T, I, J>::size() const noexcept
     -> std::pair<std::size_t, std::size_t>
 {
     return size_;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::size_i() -> std::size_t
+constexpr auto Matrix<T, I, J>::size_i() const noexcept -> std::size_t
 {
     return size_.first;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::size_i() const -> std::size_t
-{
-    return size_.first;
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::size_j() -> std::size_t
-{
-    return size_.second;
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::size_j() const -> std::size_t
+constexpr auto Matrix<T, I, J>::size_j() const noexcept -> std::size_t
 {
     return size_.second;
 }
@@ -1102,11 +1052,11 @@ auto Matrix<T, I, J>::operator*=(const Matrix<U, A, B>& matrix)
     static_assert(detail::is_convertible_v<T, U>, "Matrix::invalid type");
 
     // realloc needs to be done on this
-    for (auto i = 0; i < I; ++i) {
-        for (auto j = 0; j < B; ++j) {
-            this->array[i][j] = 0;
-            for (auto k = 0; k < B; ++k) {
-                this->array[i][j] += this->array[i][k] * matrix.array[k][j];
+    for (std::size_t i = 0; i < I; ++i) {
+        for (std::size_t j = 0; j < B; ++j) {
+            array[i][j] = 0;
+            for (std::size_t k = 0; k < B; ++k) {
+                array[i][j] += array[i][k] * matrix.array[k][j];
             }
         }
     }
@@ -1288,16 +1238,6 @@ auto Row<T, I, J>::operator[](std::size_t col) -> T&
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Row<T, I, J>::operator[](std::size_t col) const -> T&
-{
-    if (col > (J - 1)) {
-        throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid col number"};
-    }
-    return matrix(n_row, col);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Row<T, I, J>::get_row() -> std::vector<T>&
 {
     return row;
@@ -1313,17 +1253,7 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 Crow<T, I, J>::Crow(const Matrix<T, I, J>& matrix, std::size_t n_row)
     : matrix{matrix}, n_row{n_row}
 {
-    for (auto i = 0; i < J; ++i) { row.emplace_back(matrix(n_row, i)); }
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Crow<T, I, J>::operator[](std::size_t col) -> const T&
-{
-    if (col > (J - 1)) {
-        throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid col number"};
-    }
-    return matrix(n_row, col);
+    for (std::size_t i = 0; i < J; ++i) { row.emplace_back(matrix(n_row, i)); }
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>

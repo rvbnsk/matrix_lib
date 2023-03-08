@@ -58,7 +58,15 @@ TEST_CASE("Creating object - initializer list")
 {
     mtl::Matrix<int, 2, 2> m1{1, 2, 3, 4};
 
+    constexpr auto helper = [](){
+        mtl::Matrix<int, 2, 2> m1{1, 2, 3, 4, 5};
+    };
+
     SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
+
+    SECTION("Invalid initializer_list") {
+        REQUIRE_THROWS_AS(helper(), mtl::detail::exceptions::invalid_argument_input);
+    }
 }
 
 TEST_CASE("Comparison")
@@ -88,6 +96,9 @@ TEST_CASE("is diagonal")
 {
     const mtl::Matrix<int, 2, 2> matrix{1, 0, 0, 1};
     REQUIRE(matrix.is_diagonal());
+
+    mtl::Matrix<double, 3, 3> matrix2 {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    REQUIRE_FALSE(matrix2.is_diagonal());
 }
 
 TEST_CASE("Transposition")
@@ -95,4 +106,33 @@ TEST_CASE("Transposition")
     mtl::Matrix<int, 2, 2> matrix{1, 2, 3, 4};
     const mtl::Matrix<int, 2, 2> result{1, 3, 2, 4};
     REQUIRE(matrix.transpose() == result);
+}
+
+TEST_CASE("Underlying array")
+{
+    mtl::Matrix<int, 2, 2> matrix { 1, 2, 3, 4 };
+    const auto* underlying = matrix.underlying_array();
+    REQUIRE(underlying != nullptr);
+
+    for (std::size_t i = 0; i < matrix.size_i(); ++i) {
+        for (std::size_t j = 0; j < matrix.size_j(); ++j) {
+            REQUIRE(matrix[i][j] == underlying[i][j]);
+        }
+    }
+}
+
+TEST_CASE("Insert") 
+{
+    constexpr double to_fill = 3.14;
+    mtl::Matrix<double, 5, 5> matrix;
+    matrix.insert(to_fill);
+    for (const auto& elem : matrix) {
+        REQUIRE(elem == to_fill);
+    }
+}
+
+TEST_CASE("Power") {
+    mtl::Matrix<int, 2, 2> matrix { 1, 2, 3, 4};
+    const mtl::Matrix<int, 2, 2> result { 1, 4, 9, 16};
+    REQUIRE(matrix.power(2) == result);
 }
