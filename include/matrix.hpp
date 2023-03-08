@@ -354,12 +354,6 @@ class Matrix {
      */
     auto operator[](std::size_t row) const -> Crow<T, I, J>;
 
-    /**
-     * @brief operator() overload
-     * @param row number of row
-     * @param col number of col
-     * @return element of entire index (row, col)
-     */
     auto operator()(std::size_t row, std::size_t col) -> T&;
 
     /**
@@ -368,7 +362,7 @@ class Matrix {
      * @param col number of col
      * @return element of entire index (row, col)
      */
-    auto operator()(std::size_t row, std::size_t col) const -> T;
+    auto operator()(std::size_t row, std::size_t col) const -> const T&;
 
     auto at(std::size_t row, std::size_t col) const -> T;
 
@@ -560,7 +554,7 @@ class Crow {
     constexpr auto operator=(const Crow& row) -> Crow&;
     constexpr auto operator=(Crow&& row) noexcept -> Crow&;
 
-    auto operator[](std::size_t col) const -> const T&;
+    auto operator[](std::size_t col) const -> T&;
 
     auto get_row() -> std::vector<T>&;
     auto get_row() const -> const std::vector<T>&;
@@ -591,7 +585,8 @@ constexpr Matrix<T, I, J>::~Matrix()
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix(const T& value)
 {
-    this->alloc();
+    alloc();
+
     for (std::size_t i = 0; i < I; ++i) {
         for (std::size_t j = 0; j < J; ++j) { this->array[i][j] = value; }
     }
@@ -600,8 +595,9 @@ constexpr Matrix<T, I, J>::Matrix(const T& value)
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
 {
-    this->alloc();
-    this->ones();
+    alloc();
+
+    ones();
     if (elems.size() != (I * J)) [[unlikely]] {
         throw detail::exceptions::invalid_argument_input{
             "Matrix::Matrix() cannot initialize matrix with incorrect "
@@ -625,8 +621,10 @@ Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::Matrix(std::initializer_list<std::initializer_list<T>> elems)
 {
-    this->alloc();
-    this->ones();
+    alloc();
+
+    ones();
+
     for (const auto& elem : elems) {
         if (elems.size() * elem.size() != I * J) [[unlikely]] {
             std::cout
@@ -655,7 +653,7 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic U>
 constexpr Matrix<T, I, J>::Matrix(const U& value)
 {
-    this->alloc();
+    alloc();
 
     static_assert(
         std::is_convertible_v<T, U>,
@@ -671,7 +669,7 @@ constexpr Matrix<T, I, J>::Matrix(const U& value)
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& matrix)
 {
-    this->alloc();
+    alloc();
 
     *this = matrix;
 }
@@ -690,7 +688,7 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::operator=(const Matrix<T, I, J>& matrix)
     -> Matrix<T, I, J>&
 {
-    this->alloc();
+    alloc();
 
     for (std::size_t i = 0; i < I; ++i) {
         for (std::size_t j = 0; j < J; ++j) {
@@ -920,23 +918,23 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::ones()
 {
-    for (std::size_t i = 0; i < I; ++i) {
-        for (std::size_t j = 0; j < J; ++j) { array[i][j] = 0; }
+    for (std::size_t i = 0; i < size_.first; ++i) {
+        for (std::size_t j = 0; j < size_.second; ++j) { array[i][j] = 1; }
     }
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::alloc()
 {
-    array = new T*[I];
-    for (std::size_t i = 0; i < I; ++i) { array[i] = new T[J]; }
+    array = new T*[size_.first];
+    for (std::size_t i = 0; i < I; ++i) { array[i] = new T[size_.second]; }
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::alloc() const
 {
-    array = new T*[I];
-    for (std::size_t i = 0; i < I; ++i) { array[i] = new T[J]; }
+    array = new T*[size_.first];
+    for (std::size_t i = 0; i < I; ++i) { array[i] = new T[size_.second]; }
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -944,6 +942,8 @@ auto Matrix<T, I, J>::alloc(std::size_t i_, std::size_t j_)
 {
     array = new T*[i_];
     for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+
+    ones();
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -951,20 +951,20 @@ auto Matrix<T, I, J>::alloc(std::size_t i_, std::size_t j_) const
 {
     array = new T*[i_];
     for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+
+    ones();
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::realloc(std::size_t i_, std::size_t j_)
 {
-    for (std::size_t i = 0; i < size_.first; ++i) { delete[] array[i]; }
-    delete[] array;
-    array = nullptr;
+    dealloc();
 
-    array = new T*[i_];
-    for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+    size_ = std::make_pair(i_, j_);
+
+    alloc(i_, j_);
 
     has_been_reallocated = true;
-    size_ = std::make_pair(i_, j_);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -1005,7 +1005,8 @@ constexpr auto Matrix<T, I, J>::size_j() const noexcept -> std::size_t
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::power(unsigned int power) -> Matrix<T, I, J>&
 {
-    for (unsigned int i = 0; i < (power - 1); ++i) { *this *= *this; }
+    const auto temp = *this;
+    for (unsigned int i = 0; i < (power - 1); ++i) { *this *= temp; }
 
     return *this;
 }
@@ -1049,16 +1050,20 @@ template <detail::Arithmetic U, std::size_t A, std::size_t B>
 auto Matrix<T, I, J>::operator*=(const Matrix<U, A, B>& matrix)
     -> Matrix<T, I, B>&
 {
+    auto temp = *this;
+
     static_assert(J == A, "Matrix::invalid size");
     static_assert(detail::is_convertible_v<T, U>, "Matrix::invalid type");
 
-    // realloc needs to be done on this
-    for (std::size_t i = 0; i < I; ++i) {
-        for (std::size_t j = 0; j < B; ++j) {
-            array[i][j] = 0;
-            for (std::size_t k = 0; k < B; ++k) {
-                array[i][j] += array[i][k] * matrix.array[k][j];
+    realloc(I, B);
+
+    for (std::size_t i = 0; i < temp.size_.first; ++i) {
+        for (std::size_t j = 0; j < matrix.size_.second; ++j) {
+            auto sum = static_cast<T>(0);
+            for (std::size_t k = 0; k < temp.size_.second; ++k) {
+                sum += temp[i][k] * matrix.array[k][j];
             }
+            array[i][j] = sum;
         }
     }
 
@@ -1261,7 +1266,7 @@ Crow<T, I, J>::Crow(const Matrix<T, I, J>& matrix, std::size_t n_row)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Crow<T, I, J>::operator[](std::size_t col) const -> const T&
+auto Crow<T, I, J>::operator[](std::size_t col) const -> T&
 {
     if (col > (J - 1)) {
         throw detail::exceptions::out_of_range_input{
@@ -1301,7 +1306,8 @@ auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) -> T&
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) const -> T
+auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) const
+    -> const T&
 {
     if (row > (I - 1)) {
         throw detail::exceptions::out_of_range_input{
@@ -1321,8 +1327,10 @@ template <detail::Arithmetic U, std::size_t A, std::size_t B>
 constexpr auto operator<<(std::ostream& os, const Matrix<U, A, B>& array)
     -> std::ostream&
 {
-    for (std::size_t i = 0; i < A; ++i) {
-        for (std::size_t j = 0; j < B; ++j) { os << array.array[i][j] << " "; }
+    for (std::size_t i = 0; i < array.size_.first; ++i) {
+        for (std::size_t j = 0; j < array.size_.second; ++j) {
+            os << array.array[i][j] << " ";
+        }
         os << std::endl;
     }
 

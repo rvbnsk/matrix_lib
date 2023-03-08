@@ -130,3 +130,10 @@ TEST_CASE("Insert")
     matrix.insert(to_fill);
     for (const auto& elem : matrix) { REQUIRE(elem == to_fill); }
 }
+
+TEST_CASE("Power")
+{
+    mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+    const mtl::Matrix<int, 2, 2> result{ 7, 10, 15, 22 };
+    REQUIRE(matrix.power(2) == result);
+}
