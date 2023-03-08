@@ -77,9 +77,9 @@ class Crow;
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 class Matrix {
    private:
-    T** array{nullptr};
-    std::pair<std::size_t, std::size_t> size_{I, J};
-    bool has_been_reallocated{false};
+    T** array{ nullptr };
+    std::pair<std::size_t, std::size_t> size_{ I, J };
+    bool has_been_reallocated{ false };
 
    public:
     /**
@@ -605,7 +605,8 @@ Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
     if (elems.size() != (I * J)) [[unlikely]] {
         throw detail::exceptions::invalid_argument_input{
             "Matrix::Matrix() cannot initialize matrix with incorrect "
-            "number of elements."};
+            "number of elements."
+        };
     }
     else [[likely]] {
         auto i = 0;
@@ -715,7 +716,7 @@ constexpr auto Matrix<T, I, J>::operator=(const Matrix<U, A, B>& matrix)
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix(Matrix<T, I, J>&& matrix) noexcept
-    : array{nullptr}, size_{0, 0}, has_been_reallocated{false}
+    : array{ nullptr }, size_{ 0, 0 }, has_been_reallocated{ false }
 {
     *this = std::move(matrix);
 }
@@ -738,7 +739,7 @@ constexpr auto Matrix<T, I, J>::operator=(Matrix<T, I, J>&& matrix) noexcept
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
 constexpr Matrix<T, I, J>::Matrix(Matrix<U, A, B>&& array) noexcept
-    : array{nullptr}, size_{0, 0}, has_been_reallocated{false}
+    : array{ nullptr }, size_{ 0, 0 }, has_been_reallocated{ false }
 {
     static_assert(detail::is_same_v<T, U>, "Matrix::invalid type");
     static_assert(I == A and J == B, "Matrix::invalid size");
@@ -1205,7 +1206,8 @@ auto Matrix<T, I, J>::operator[](std::size_t row) -> Row<T, I, J>
 {
     if (row > (I - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid row number"};
+            "Matrix::invalid row number"
+        };
     }
     return Row(*this, row);
 }
@@ -1215,14 +1217,15 @@ auto Matrix<T, I, J>::operator[](std::size_t row) const -> Crow<T, I, J>
 {
     if (row > (I - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid row number"};
+            "Matrix::invalid row number"
+        };
     }
     return Crow(*this, row);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 Row<T, I, J>::Row(Matrix<T, I, J>& matrix, std::size_t n_row)
-    : matrix{matrix}, n_row{n_row}
+    : matrix{ matrix }, n_row{ n_row }
 {
     for (std::size_t i = 0; i < J; ++i) { row.emplace_back(matrix(n_row, i)); }
 }
@@ -1232,7 +1235,8 @@ auto Row<T, I, J>::operator[](std::size_t col) -> T&
 {
     if (col > (J - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid col number"};
+            "Matrix::invalid col number"
+        };
     }
     return matrix(n_row, col);
 }
@@ -1251,7 +1255,7 @@ auto Row<T, I, J>::get_row() const -> const std::vector<T>&
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 Crow<T, I, J>::Crow(const Matrix<T, I, J>& matrix, std::size_t n_row)
-    : matrix{matrix}, n_row{n_row}
+    : matrix{ matrix }, n_row{ n_row }
 {
     for (std::size_t i = 0; i < J; ++i) { row.emplace_back(matrix(n_row, i)); }
 }
@@ -1261,7 +1265,8 @@ auto Crow<T, I, J>::operator[](std::size_t col) const -> const T&
 {
     if (col > (J - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid col number"};
+            "Matrix::invalid col number"
+        };
     }
     return matrix(n_row, col);
 }
@@ -1283,11 +1288,13 @@ auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) -> T&
 {
     if (row > (I - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid row number"};
+            "Matrix::invalid row number"
+        };
     }
     if (col > (J - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid col number"};
+            "Matrix::invalid col number"
+        };
     }
 
     return this->array[row][col];
@@ -1298,11 +1305,13 @@ auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) const -> T
 {
     if (row > (I - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid row number"};
+            "Matrix::invalid row number"
+        };
     }
     if (col > (J - 1)) {
         throw detail::exceptions::out_of_range_input{
-            "Matrix::invalid col number"};
+            "Matrix::invalid col number"
+        };
     }
 
     return this->array[row][col];
@@ -1347,7 +1356,7 @@ Matrix<T, I, J>::iterator::iterator(
     Matrix<T, I, J>& matrix_,
     std::size_t row_,
     std::size_t col_)
-    : matrix{matrix_}, row{row_}, col{col_}
+    : matrix{ matrix_ }, row{ row_ }, col{ col_ }
 {
 }
 
@@ -1356,7 +1365,7 @@ Matrix<T, I, J>::const_iterator::const_iterator(
     const Matrix<T, I, J>& matrix_,
     std::size_t row_,
     std::size_t col_)
-    : matrix{matrix_}, row{row_}, col{col_}
+    : matrix{ matrix_ }, row{ row_ }, col{ col_ }
 {
 }
 
