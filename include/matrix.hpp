@@ -36,218 +36,96 @@ struct invalid_argument_input : public std::invalid_argument {
 }  // namespace exceptions
 
 // clang-format off
-template <typename At_>
-concept Arithmetic = is_arithmetic_v<At_> and requires(At_ type)
-{
-    type + type;
-    type - type;
-    type * type;
-    type == type;
-    type != type;
-};
+template <typename Ta_>
+concept Arithmetic = is_arithmetic_v<Ta_> and requires(Ta_ a_type) {
+                                                  a_type + a_type;
+                                                  a_type - a_type;
+                                                  a_type * a_type;
+                                                  a_type == a_type;
+                                                  a_type != a_type;
+                                              };
 
-template <class At_, class Au_>
-concept Scalar = std::is_scalar_v<Au_> and requires(At_ t__, Au_ u__)
-{
-    t__ * u__;
-};
+template <class Ta_, class Tb_>
+concept Scalar = std::is_scalar_v<Tb_>
+                 and requires(Ta_ a_type, Tb_ b_type) { a_type * b_type; };
 // clang-format on
 
 }  // namespace detail
 
-/**
- * @brief Helper class for storing entire row from matrix
- */
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 class Row;
 
-/**
- * @brief Helper class for storing entire const row from const matrix
- */
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 class Crow;
 
-/**
- * @brief Main class for matrix storage
- * @tparam T type of value's being stored
- * @tparam I number of rows
- * @tparam J number of cols
- */
 // NOLINTBEGIN(hicpp-named-parameter,readability-named-parameter)
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 class Matrix {
    private:
-    T** array{ nullptr };
+    T** array{ new T*[I] };
     std::pair<std::size_t, std::size_t> size_{ I, J };
     bool has_been_reallocated{ false };
 
    public:
-    /**
-     * @brief Default constructor of mtl::Matrix<T, I, J>
-     * @see Matrix(const T& value)
-     */
     constexpr Matrix();
 
-    /**
-     * @brief Default destructor of mtl::Matrix<T, I, J>
-     */
     constexpr ~Matrix();
 
-    /**
-     * @brief Constructor with initialization matrix with custom value
-     * @param value initializator of matrix
-     */
     explicit constexpr Matrix(const T& value);
 
-    /**
-     * @brief Constructor for initializer list
-     * @param elems initializer list of elements
-     */
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    Matrix(std::initializer_list<T> elems);
+    constexpr Matrix(std::initializer_list<T> elems);
 
-    /**
-     * @brief Constructor for initializer list
-     * @param elems initializer list of elements
-     */
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    Matrix(std::initializer_list<std::initializer_list<T>> elems);
+    constexpr Matrix(std::initializer_list<std::initializer_list<T>> elems);
 
-    /**
-     * @brief Constructor with initialization matrix with custom value with
-     * casting to base type
-     * @param value initializator of matrix
-     */
     template <detail::Arithmetic U>
     explicit constexpr Matrix(const U& value);
 
-    /**
-     * @brief Copy constructor
-     * @param array matrix to copy
-     */
     constexpr Matrix(const Matrix<T, I, J>& matrix);
 
-    /**
-     * @brief Copy constructor for matrix with different template args
-     * @param array matrix to copy
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     explicit constexpr Matrix(const Matrix<U, A, B>& matrix);
 
-    /**
-     * @brief Copy assignment operator
-     * @param matrix matrix to copy
-     * @return Reference to base matrix
-     */
     constexpr auto operator=(const Matrix<T, I, J>& matrix) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief Copy assignment operator for matrix with different template args
-     * @param matrix matrix to copy
-     * @return Reference to base matrix
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     constexpr auto operator=(const Matrix<U, A, B>& matrix) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief Move constructor
-     * @param array matrix to move
-     */
     constexpr Matrix(Matrix<T, I, J>&& matrix) noexcept;
 
-    /**
-     * @brief Move constructor for matrix with different template args
-     * @param array matrix to move
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     explicit constexpr Matrix(Matrix<U, A, B>&& array) noexcept;
 
-    /**
-     * @brief Move assignment operator
-     * @param matrix matrix to move
-     * @return Reference to base matrix
-     */
     constexpr auto operator=(Matrix<T, I, J>&& matrix) noexcept
         -> Matrix<T, I, J>&;
 
-    /**
-     * @brief Move assignment operator for matrix with different template args
-     * @param matrix matrix to move
-     * @return Reference to base matrix
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     constexpr auto operator=(Matrix<U, A, B>&& matrix) noexcept
         -> Matrix<T, I, J>&;
 
-    /**
-     * @brief Get underlying array
-     * @return underlying array pointer
-     */
     constexpr auto underlying_array() -> T**;
 
-    /**
-     * @brief Get underlying array for const object
-     * @return underlying array pointer
-     */
     constexpr auto underlying_array() const -> T**;
 
-    /**
-     * @brief Fill matrix with certain value
-     * @param element value to fill
-     */
     auto insert(const T& element);
 
-    /**
-     * @brief
-     */
     auto sort();
 
-    /**
-     * @brief method transposes the matrix
-     * @return transposed matrix
-     */
     auto transpose() -> Matrix<T, I, J>;
 
-    /**
-     * @brief method transposes the matrix
-     * @return transposed matrix
-     */
     auto transpose() const -> Matrix<T, I, J>;
 
-    /**
-     * @brief method powers the matrix
-     * @param power integer of the power to calc
-     * @return powered matrix
-     */
     auto power(unsigned int power) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief methods calculates determinant of the matrix
-     * @return det
-     */
-    auto det() -> T;
+    constexpr auto det() -> T;
 
-    /**
-     * @brief methods calculates determinant of the matrix
-     * @return det
-     */
     auto det() const -> T;
 
-    /**
-     * @brief check whether the matrix is diagonal
-     * @return is diagonal
-     */
     auto is_diagonal() -> bool;
 
-    /**
-     * @brief check whether the matrix is diagonal
-     * @return is diagonal
-     */
     auto is_diagonal() const -> bool;
 
-    /**
-     * @brief fill matrix with "1"
-     */
     auto ones();
 
     auto alloc();
@@ -259,122 +137,48 @@ class Matrix {
     auto dealloc();
     auto dealloc() const;
 
-    /**
-     * @brief get size i (rows) and j (cols) of matrix
-     * @return size: pair of i and j
-     */
     constexpr auto size() const noexcept -> std::pair<std::size_t, std::size_t>;
 
-    /**
-     * @brief get size i (number of rows)
-     * @return number of rows
-     */
     constexpr auto size_i() const noexcept -> std::size_t;
 
-    /**
-     * @brief get size j (number of cols)
-     * @return number of cols
-     */
     constexpr auto size_j() const noexcept -> std::size_t;
 
-    /**
-     * @brief operator+= overload
-     * @param matrix to add
-     * @return reference to result of adding two matrices
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     auto operator+=(const Matrix<U, A, B>& matrix) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief operator-= overload
-     * @param matrix to subtract
-     * @return reference to result of subtraction two matrices
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     auto operator-=(const Matrix<U, A, B>& matrix) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief operator*= overload
-     * @param matrix to multiply
-     * @return result of multiplication two matrices
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     auto operator*=(const Matrix<U, A, B>& matrix) -> Matrix<T, I, B>&;
 
-    /**
-     * @brief operator*= overload
-     * @param scalar to multiply
-     * @return result of multiplication of matrix and scalar
-     */
     template <detail::Scalar<T> U>
     auto operator*=(const U& scalar) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief operator*= overload
-     * @param vector to multiply
-     * @return result of multiplication of matrix and vector
-     */
     template <detail::Scalar<T> U>
     auto operator*=(const std::vector<U>& vector) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief operator^ overload
-     * @param power integer of the power to calc
-     * @return powered matrix
-     */
     auto operator^(const unsigned int& power) -> Matrix<T, I, J>&;
 
-    /**
-     * @brief operator== overload
-     * @param matrix matrix to compare
-     * @return are two matrices equal
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     inline auto operator==(const Matrix<U, A, B>& matrix) const -> bool;
 
-    /**
-     * @brief operator== overload
-     * @param matrix matrix to compare
-     * @return are two matrices unequal
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     inline auto operator!=(const Matrix<U, A, B>& matrix) const -> bool;
 
-    /**
-     * @brief operator[] overload
-     * @param row number of row
-     * @return row with certain index
-     */
     auto operator[](std::size_t row) -> Row<T, I, J>;
 
-    /**
-     * @brief operator[] overload
-     * @param row number of row
-     * @return row with certain index
-     */
     auto operator[](std::size_t row) const -> Crow<T, I, J>;
 
     auto operator()(std::size_t row, std::size_t col) -> T&;
 
-    /**
-     * @brief operator() overload
-     * @param row number of row
-     * @param col number of col
-     * @return element of entire index (row, col)
-     */
     auto operator()(std::size_t row, std::size_t col) const -> const T&;
 
     auto at(std::size_t row, std::size_t col) const -> T;
 
-    /**
-     * @brief operator<< overload
-     * @param os std::ostream output
-     * @param array matrix to display
-     * @return std::ostream output
-     */
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     friend constexpr auto operator<<(
-        std::ostream& os,
+        std::ostream& ostream,
         const Matrix<U, A, B>& array) -> std::ostream&;
 
     class iterator {
@@ -477,28 +281,12 @@ class Matrix {
     };
     // NOLINTEND(hicpp-named-parameter,readability-named-parameter)
 
-    /**
-     * @brief begin of container
-     * @return iterator on beginning
-     */
     auto begin() -> iterator;
 
-    /**
-     * @brief begin of container
-     * @return const_iterator on beginning
-     */
     auto begin() const -> const_iterator;
 
-    /**
-     * @brief end of container
-     * @return iterator on end
-     */
     auto end() -> iterator;
 
-    /**
-     * @brief begin of container
-     * @return iterator on end
-     */
     auto end() const -> const_iterator;
 
     auto cbegin() -> const_iterator;
@@ -536,7 +324,8 @@ class Row {
     auto get_row() const -> const std::vector<T>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    friend auto operator<<(std::ostream& os, const Row& row) -> std::ostream&;
+    friend auto operator<<(std::ostream& ostream, const Row& row)
+        -> std::ostream&;
 };
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -560,13 +349,13 @@ class Crow {
     auto get_row() const -> const std::vector<T>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    friend auto operator<<(std::ostream& os, const Crow& row) -> std::ostream&;
+    friend auto operator<<(std::ostream& ostream, const Crow& row)
+        -> std::ostream&;
 };
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix()
 {
-    array = new T*[I];
     for (std::size_t i = 0; i < I; ++i) { array[i] = new T[J]; }
 
     for (std::size_t i = 0; i < I; ++i) {
@@ -593,7 +382,7 @@ constexpr Matrix<T, I, J>::Matrix(const T& value)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
+constexpr Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
 {
     alloc();
 
@@ -605,21 +394,22 @@ Matrix<T, I, J>::Matrix(std::initializer_list<T> elems)
         };
     }
     else [[likely]] {
-        auto i = 0;
-        auto j = 0;
+        auto row_num = 0;
+        auto col_num = 0;
         for (const auto& elem : elems) {
-            array[i][j] = elem;
-            if (j != J - 1) { ++j; }
-            else if (i != I - 1) {
-                ++i;
-                j = 0;
+            array[row_num][col_num] = elem;
+            if (col_num != J - 1) { ++col_num; }
+            else if (row_num != I - 1) {
+                ++row_num;
+                col_num = 0;
             }
         }
     }
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-Matrix<T, I, J>::Matrix(std::initializer_list<std::initializer_list<T>> elems)
+constexpr Matrix<T, I, J>::Matrix(
+    std::initializer_list<std::initializer_list<T>> elems)
 {
     alloc();
 
@@ -669,8 +459,6 @@ constexpr Matrix<T, I, J>::Matrix(const U& value)
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& matrix)
 {
-    alloc();
-
     *this = matrix;
 }
 
@@ -688,14 +476,15 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::operator=(const Matrix<T, I, J>& matrix)
     -> Matrix<T, I, J>&
 {
-    alloc();
+    if (&matrix != this) {
+        alloc();
 
-    for (std::size_t i = 0; i < I; ++i) {
-        for (std::size_t j = 0; j < J; ++j) {
-            this->array[i][j] = matrix.array[i][j];
+        for (std::size_t i = 0; i < I; ++i) {
+            for (std::size_t j = 0; j < J; ++j) {
+                this->array[i][j] = matrix.array[i][j];
+            }
         }
     }
-
     return *this;
 }
 
@@ -714,7 +503,7 @@ constexpr auto Matrix<T, I, J>::operator=(const Matrix<U, A, B>& matrix)
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix(Matrix<T, I, J>&& matrix) noexcept
-    : array{ nullptr }, size_{ 0, 0 }, has_been_reallocated{ false }
+    : size_{ 0, 0 }
 {
     *this = std::move(matrix);
 }
@@ -737,7 +526,7 @@ constexpr auto Matrix<T, I, J>::operator=(Matrix<T, I, J>&& matrix) noexcept
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
 constexpr Matrix<T, I, J>::Matrix(Matrix<U, A, B>&& array) noexcept
-    : array{ nullptr }, size_{ 0, 0 }, has_been_reallocated{ false }
+    : size_{ 0, 0 }
 {
     static_assert(detail::is_same_v<T, U>, "Matrix::invalid type");
     static_assert(I == A and J == B, "Matrix::invalid size");
@@ -810,30 +599,28 @@ auto Matrix<T, I, J>::transpose() const -> Matrix<T, I, J>
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::det() -> T
+constexpr auto Matrix<T, I, J>::det() -> T
 {
-    static_assert(I == J, "Matrix::det::invalid size");
+    // static_assert(size_.first == size_.second, "Matrix::det::invalid size");
 
     T det = 0;
     int sign = -1;
 
     Matrix temp;
 
-    if constexpr (I == 1) { return this->array[0][0]; }
+    if (size_.first == 1) { return array[0][0]; }
 
-    if constexpr (I == 2) {
-        return (
-            this->array[0][0] * this->array[1][1]
-            - this->array[0][1] * this->array[1][0]);
+    if (size_.first == 2) {
+        return (array[0][0] * array[1][1] - array[0][1] * array[1][0]);
     }
 
-    for (auto m = 0; m < I; ++m) {
-        unsigned int temp_i = 0;
-        unsigned int temp_j = 0;
-        for (auto n = 1; n < I; ++n) {
-            for (auto o = 0; o < I; ++o) {
+    for (std::size_t m = 0; m < size_.first; ++m) {
+        std::size_t temp_i = 0;
+        std::size_t temp_j = 0;
+        for (std::size_t n = 1; n < size_.first; ++n) {
+            for (std::size_t o = 0; o < size_.first; ++o) {
                 if (o == m) { continue; }
-                temp.array[temp_i][temp_j] = this->array[n][o];
+                temp.array[temp_i][temp_j] = array[n][o];
                 temp_j++;
             }
             if (temp_j == (I - 1)) {
@@ -842,7 +629,7 @@ auto Matrix<T, I, J>::det() -> T
             }
         }
         sign = -sign;
-        det += (sign * this->array[0][m] * temp.det());
+        det += (sign * array[0][m] * temp.det());
     }
 
     return det;
@@ -892,9 +679,11 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 {
     if constexpr (I != J) { return false; }
 
-    for (std::size_t m = 0; m < I; ++m) {
-        for (std::size_t n = 0; n < I; ++n) {
-            if (m != n and this->array[m][n] != 0) { return false; }
+    for (std::size_t row_num = 0; row_num < I; ++row_num) {
+        for (std::size_t col_num = 0; col_num < I; ++col_num) {
+            if (row_num != col_num and array[row_num][col_num] != 0) {
+                return false;
+            }
         }
     }
 
@@ -906,9 +695,11 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 {
     if constexpr (I != J) { return false; }
 
-    for (std::size_t m = 0; m < I; ++m) {
-        for (std::size_t n = 0; n < I; ++n) {
-            if (m != n and this->array[m][n] != 0) { return false; }
+    for (std::size_t row_num = 0; row_num < I; ++row_num) {
+        for (std::size_t col_num = 0; col_num < I; ++col_num) {
+            if (row_num != col_num and array[row_num][col_num] != 0) {
+                return false;
+            }
         }
     }
 
@@ -938,31 +729,31 @@ auto Matrix<T, I, J>::alloc() const
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::alloc(std::size_t i_, std::size_t j_)
+auto Matrix<T, I, J>::alloc(std::size_t row_size, std::size_t col_size)
 {
-    array = new T*[i_];
-    for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+    array = new T*[row_size];
+    for (std::size_t i = 0; i < row_size; ++i) { array[i] = new T[col_size]; }
 
     ones();
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::alloc(std::size_t i_, std::size_t j_) const
+auto Matrix<T, I, J>::alloc(std::size_t row_size, std::size_t col_size) const
 {
-    array = new T*[i_];
-    for (std::size_t i = 0; i < i_; ++i) { array[i] = new T[j_]; }
+    array = new T*[row_size];
+    for (std::size_t i = 0; i < row_size; ++i) { array[i] = new T[col_size]; }
 
     ones();
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::realloc(std::size_t i_, std::size_t j_)
+auto Matrix<T, I, J>::realloc(std::size_t row_size, std::size_t col_size)
 {
     dealloc();
 
-    size_ = std::make_pair(i_, j_);
+    size_ = std::make_pair(row_size, col_size);
 
-    alloc(i_, j_);
+    alloc(row_size, col_size);
 
     has_been_reallocated = true;
 }
@@ -1076,7 +867,7 @@ auto Matrix<T, I, J>::operator*=(const U& scalar) -> Matrix<T, I, J>&
 {
     for (std::size_t i = 0; i < J; ++i) {
         for (std::size_t j = 0; j < J; ++j) {
-            this->array[i][j] = this->array[i][j] * scalar;
+            array[i][j] = array[i][j] * scalar;
         }
     }
 
@@ -1113,11 +904,12 @@ template <
     std::size_t J,
     std::size_t A,
     std::size_t B>
-auto operator+(Matrix<T, I, J> lhs, const Matrix<U, A, B>& rhs)
+auto operator+(const Matrix<T, I, J>& lhs, const Matrix<U, A, B>& rhs)
     -> Matrix<T, I, J>
 {
-    lhs += rhs;
-    return lhs;
+    auto tmp = lhs;
+    tmp += rhs;
+    return tmp;
 }
 
 template <
@@ -1127,11 +919,12 @@ template <
     std::size_t J,
     std::size_t A,
     std::size_t B>
-auto operator-(Matrix<T, I, J> lhs, const Matrix<U, A, B>& rhs)
+auto operator-(const Matrix<T, I, J>& lhs, const Matrix<U, A, B>& rhs)
     -> Matrix<T, I, J>
 {
-    lhs -= rhs;
-    return lhs;
+    auto tmp = lhs;
+    tmp -= rhs;
+    return tmp;
 }
 
 template <
@@ -1141,11 +934,12 @@ template <
     std::size_t J,
     std::size_t A,
     std::size_t B>
-auto operator*(Matrix<T, I, J> lhs, const Matrix<U, A, B>& rhs)
+auto operator*(const Matrix<T, I, J>& lhs, const Matrix<U, A, B>& rhs)
     -> Matrix<T, I, J>
 {
-    lhs *= rhs;
-    return lhs;
+    auto tmp = lhs;
+    tmp *= rhs;
+    return tmp;
 }
 
 template <
@@ -1153,10 +947,11 @@ template <
     detail::Scalar<T> U,
     std::size_t I,
     std::size_t J>
-auto operator*(Matrix<T, I, J> lhs, const U& rhs) -> Matrix<T, I, J>
+auto operator*(const Matrix<T, I, J>& lhs, const U& rhs) -> Matrix<T, I, J>
 {
-    lhs *= rhs;
-    return lhs;
+    auto tmp = lhs;
+    tmp *= rhs;
+    return tmp;
 }
 
 template <
@@ -1324,39 +1119,40 @@ auto Matrix<T, I, J>::operator()(std::size_t row, std::size_t col) const
 }
 
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
-constexpr auto operator<<(std::ostream& os, const Matrix<U, A, B>& array)
+constexpr auto operator<<(std::ostream& ostream, const Matrix<U, A, B>& array)
     -> std::ostream&
 {
     for (std::size_t i = 0; i < array.size_.first; ++i) {
         for (std::size_t j = 0; j < array.size_.second; ++j) {
-            os << array.array[i][j] << " ";
+            ostream << array.array[i][j] << " ";
         }
-        os << std::endl;
+        ostream << std::endl;
     }
 
-    return os;
+    return ostream;
 }
 
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
-auto operator<<(std::ostream& os, const Row<U, A, B>& row) -> std::ostream&
+auto operator<<(std::ostream& ostream, const Row<U, A, B>& row) -> std::ostream&
 {
     for (const auto& elem : row.get_row()) {
-        os << elem;
-        os << " ";
+        ostream << elem;
+        ostream << " ";
     }
 
-    return os;
+    return ostream;
 }
 
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
-auto operator<<(std::ostream& os, const Crow<U, A, B>& row) -> std::ostream&
+auto operator<<(std::ostream& ostream, const Crow<U, A, B>& row)
+    -> std::ostream&
 {
     for (const auto& elem : row.get_row()) {
-        os << elem;
-        os << " ";
+        ostream << elem;
+        ostream << " ";
     }
 
-    return os;
+    return ostream;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>

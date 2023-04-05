@@ -4,6 +4,7 @@ bugprone-*,
 cert-*,
 cppcoreguidelines-*,
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+-cppcoreguidelines-owning-memory
 modernize-*,
 -modernize-avoid-c-arrays,
 -modernize-use-nodiscard,
