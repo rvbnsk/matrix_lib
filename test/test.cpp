@@ -28,6 +28,11 @@ TEST_CASE("Creating object - default constructor")
     }
 }
 
+TEST_CASE("Constexpr object")
+{
+    // constexpr mtl::Matrix<int, 2, 2> m1 { 0, 1, 2, 3 };
+}
+
 TEST_CASE("Creating object - fill with value")
 {
     constexpr std::size_t sg_size = 2;
@@ -105,9 +110,19 @@ TEST_CASE("is diagonal")
 
 TEST_CASE("Transposition")
 {
-    mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
-    const mtl::Matrix<int, 2, 2> result{ 1, 3, 2, 4 };
-    REQUIRE(matrix.transpose() == result);
+    SECTION("TC01")
+    {
+        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+        const mtl::Matrix<int, 2, 2> result{ 1, 3, 2, 4 };
+        REQUIRE(matrix.transpose() == result);
+    }
+
+    /* SECTION("TC02")
+    {
+        mtl::Matrix<double, 3, 2> matrix { {1, 2}, {3, 4}, {5, 6} };
+        const mtl::Matrix<double, 2, 3> result { {1, 3, 5}, {2, 4, 6} };
+        REQUIRE(matrix.transpose() == result);
+    } */
 }
 
 TEST_CASE("Underlying array")
@@ -140,29 +155,31 @@ TEST_CASE("Power")
 
 TEST_CASE("Multiplication")
 {
-    mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+    const mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
     const mtl::Matrix<int, 2, 2> result{ 7, 10, 15, 22 };
     REQUIRE(matrix * matrix == result);
 }
 
 TEST_CASE("Addition")
 {
-    mtl::Matrix<double, 2, 2> matrix{ 1, 2, 3, 4 };
+    const mtl::Matrix<double, 2, 2> matrix{ 1, 2, 3, 4 };
     const mtl::Matrix<double, 2, 2> result{ 2, 4, 6, 8 };
     REQUIRE(matrix + matrix == result);
 }
 
 TEST_CASE("Adjection")
 {
-    mtl::Matrix<double, 2, 2> matrix{ 1, 2, 3, 4 };
+    const mtl::Matrix<double, 2, 2> matrix{ 1, 2, 3, 4 };
     const mtl::Matrix<double, 2, 2> result{ 0, 0, 0, 0 };
     REQUIRE(matrix - matrix == result);
 }
 
 TEST_CASE("Multiplication by scalar")
 {
-    mtl::Matrix<double, 2, 2> matrix{ 1, 2, 3, 4 };
+    const mtl::Matrix<double, 2, 2> matrix{ 1, 2, 3, 4 };
     const int scalar = 5;
     const mtl::Matrix<double, 2, 2> result{ 5, 10, 15, 20 };
     REQUIRE(matrix * scalar == result);
 }
+
+TEST_CASE("Multiplication by vector") { const std::vector<int> vec{ 0, 1, 2 }; }
