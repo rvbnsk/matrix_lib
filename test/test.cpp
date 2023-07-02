@@ -28,11 +28,6 @@ TEST_CASE("Creating object - default constructor")
     }
 }
 
-TEST_CASE("Constexpr object")
-{
-    // constexpr mtl::Matrix<int, 2, 2> m1 { 0, 1, 2, 3 };
-}
-
 TEST_CASE("Creating object - fill with value")
 {
     constexpr std::size_t sg_size = 2;
@@ -61,19 +56,75 @@ TEST_CASE("Creating object - fill with value")
 
 TEST_CASE("Creating object - initializer list")
 {
-    mtl::Matrix<int, 2, 2> m1{ 1, 2, 3, 4 };
-
-    constexpr auto helper = []() {
-        mtl::Matrix<int, 2, 2> m1{ 1, 2, 3, 4, 5 };
+    constexpr auto initialize_with_valid_list = []() {
+        return mtl::Matrix<int, 2, 2>{ 1, 2, 3, 4 };
     };
 
+    REQUIRE_NOTHROW(initialize_with_valid_list());
+
+    const auto m1 = initialize_with_valid_list();
+
     SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
+
+    constexpr auto initialize_with_invalid_list = []() {
+        return mtl::Matrix<int, 2, 2>{ 1, 2, 3, 4, 5 };
+    };
 
     SECTION("Invalid initializer_list")
     {
         REQUIRE_THROWS_AS(
-            helper(),
+            initialize_with_invalid_list(),
             mtl::detail::exceptions::invalid_argument_input);
+    }
+}
+
+TEST_CASE("Creating object - nested initializer list")
+{
+    constexpr auto initialize_with_valid_list = []() {
+        return mtl::Matrix<int, 3, 3>{ { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } };
+    };
+
+    REQUIRE_NOTHROW(initialize_with_valid_list());
+
+    const auto m1 = initialize_with_valid_list();
+
+    SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
+
+    constexpr auto initialize_with_invalid_list = []() {
+        return mtl::Matrix<int, 3, 3>{ { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8 } };
+    };
+
+    SECTION("Invalid initializer_list")
+    {
+        REQUIRE_THROWS_AS(
+            initialize_with_invalid_list(),
+            mtl::detail::exceptions::invalid_argument_input);
+    }
+}
+
+TEST_CASE("Operator= with std::initializer_list")
+{
+    SECTION("Copy initializer_list")
+    {
+        mtl::Matrix<int, 2, 2> m1;
+        const std::initializer_list<int> list{ 1, 2, 3, 4 };
+
+        m1 = list;
+        REQUIRE(m1[0][0] == 1);
+        REQUIRE(m1[0][1] == 2);
+        REQUIRE(m1[1][0] == 3);
+        REQUIRE(m1[1][1] == 4);
+    }
+
+    SECTION("Move initializer_list")
+    {
+        mtl::Matrix<int, 2, 2> m1;
+
+        m1 = { 1, 2, 3, 4 };
+        REQUIRE(m1[0][0] == 1);
+        REQUIRE(m1[0][1] == 2);
+        REQUIRE(m1[1][0] == 3);
+        REQUIRE(m1[1][1] == 4);
     }
 }
 
@@ -90,6 +141,19 @@ TEST_CASE("Comparison")
 
         REQUIRE(matrix1 == matrix2);
     }
+
+    SECTION("Equals with std::initializer_list")
+    {
+        constexpr auto to_fill = 2;
+        mtl::Matrix<int, 3, 3> matrix1(to_fill);
+        const auto initializer_list = { 2, 2, 2, 2, 2, 2, 2, 2, 2 };
+
+        REQUIRE(matrix1 == initializer_list);
+
+        mtl::Matrix<int, 2, 2> matrix2{ 1, 2, 3, 4 };
+        std::initializer_list<int> list = { 1, 2, 3, 4 };
+        REQUIRE(matrix2 == list);
+    }
 }
 
 TEST_CASE("matrix size")
@@ -97,6 +161,86 @@ TEST_CASE("matrix size")
     const mtl::Matrix<int, 3, 3> matrix;
     const std::pair<std::size_t, std::size_t> size{ 3, 3 };
     REQUIRE(matrix.size() == size);
+}
+
+TEST_CASE("operator[]")
+{
+    SECTION("Row")
+    {
+        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+        std::vector<int> row{ 1, 2 };
+        REQUIRE(matrix[0].get_row() == row);
+    }
+
+    SECTION("Assign row")
+    {
+        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+        std::vector<int> new_row{ 0, 0 };
+        matrix[0] = new_row;
+
+        REQUIRE(matrix[0].get_row() == new_row);
+        REQUIRE(matrix.underlying_array()[0][1] == new_row.at(1));
+
+        std::initializer_list<int> row{ 0, 0, 3, 4 };
+        REQUIRE(matrix == row);
+    }
+
+    SECTION("Crow")
+    {
+        const mtl::Matrix<int, 2, 2> matrix{ 4, 5, 6, 7 };
+        const std::vector<int> row{ 6, 7 };
+        REQUIRE(matrix[1].get_row() == row);
+    }
+}
+
+TEST_CASE("operator[][]")
+{
+    SECTION("Matrix")
+    {
+        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+
+        int value = 1;
+
+        for (std::size_t row = 0; row < matrix.size_i(); ++row) {
+            for (std::size_t col = 0; col < matrix.size_j(); ++col) {
+                REQUIRE(matrix[row][col] == value++);
+            }
+        }
+    }
+
+    SECTION("const Matrix")
+    {
+        const mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+
+        int value = 1;
+
+        for (std::size_t row = 0; row < matrix.size_i(); ++row) {
+            for (std::size_t col = 0; col < matrix.size_j(); ++col) {
+                REQUIRE(matrix[row][col] == value++);
+            }
+        }
+    }
+}
+
+TEST_CASE("Range based for loop")
+{
+    SECTION("Matrix")
+    {
+        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+
+        int value = 1;
+
+        for (auto elem : matrix) { REQUIRE(elem == value++); }
+    }
+
+    SECTION("const Matrix")
+    {
+        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+
+        int value = 1;
+
+        for (const auto elem : matrix) { REQUIRE(elem == value++); }
+    }
 }
 
 TEST_CASE("is diagonal")
@@ -117,12 +261,12 @@ TEST_CASE("Transposition")
         REQUIRE(matrix.transpose() == result);
     }
 
-    /* SECTION("TC02")
+    SECTION("TC02")
     {
-        mtl::Matrix<double, 3, 2> matrix { {1, 2}, {3, 4}, {5, 6} };
-        const mtl::Matrix<double, 2, 3> result { {1, 3, 5}, {2, 4, 6} };
+        mtl::Matrix<double, 3, 2> matrix{ { 1, 2 }, { 3, 4 }, { 5, 6 } };
+        const mtl::Matrix<double, 2, 3> result{ { 1, 3, 5 }, { 2, 4, 6 } };
         REQUIRE(matrix.transpose() == result);
-    } */
+    }
 }
 
 TEST_CASE("Underlying array")
@@ -153,11 +297,26 @@ TEST_CASE("Power")
     REQUIRE(matrix.power(2) == result);
 }
 
-TEST_CASE("Multiplication")
+TEST_CASE("Multiplication - quadratic matrix")
 {
     const mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
-    const mtl::Matrix<int, 2, 2> result{ 7, 10, 15, 22 };
-    REQUIRE(matrix * matrix == result);
+    const auto result_values = { 7, 10, 15, 22 };
+
+    auto result = matrix * matrix;
+
+    REQUIRE(result.size() == matrix.size());
+    REQUIRE(result == result_values);
+}
+
+TEST_CASE("Multiplication - non quadratic matrix")
+{
+    const mtl::Matrix<int, 3, 2> matrix1{ 1, 2, 3, 4, 5, 6 };
+    const mtl::Matrix<int, 2, 3> matrix2{ 1, 2, 3, 4, 5, 6 };
+    const auto result_values = { 9, 12, 15, 19, 26, 33, 29, 40, 51 };
+    const auto result = matrix1 * matrix2;
+
+    REQUIRE(result.size() == std::pair<std::size_t, std::size_t>{ 3, 3 });
+    REQUIRE(result == result_values);
 }
 
 TEST_CASE("Addition")

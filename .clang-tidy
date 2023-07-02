@@ -4,6 +4,7 @@ bugprone-*,
 -bugprone-easily-swappable-parameters,
 cert-*,
 cppcoreguidelines-*,
+-cppcoreguidelines-avoid-const-or-ref-data-members,
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,
 -cppcoreguidelines-owning-memory
 modernize-*,

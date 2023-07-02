@@ -67,6 +67,7 @@ class Matrix {
     bool has_been_reallocated{ false };
 
    public:
+    // CTORS
     constexpr Matrix();
 
     constexpr ~Matrix();
@@ -83,26 +84,34 @@ class Matrix {
     explicit constexpr Matrix(const U& value);
 
     constexpr Matrix(const Matrix<T, I, J>& matrix);
-
-    template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    explicit constexpr Matrix(const Matrix<U, A, B>& matrix);
-
     constexpr auto operator=(const Matrix<T, I, J>& matrix) -> Matrix<T, I, J>&;
-
-    template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr auto operator=(const Matrix<U, A, B>& matrix) -> Matrix<T, I, J>&;
-
     constexpr Matrix(Matrix<T, I, J>&& matrix) noexcept;
-
-    template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    explicit constexpr Matrix(Matrix<U, A, B>&& array) noexcept;
-
     constexpr auto operator=(Matrix<T, I, J>&& matrix) noexcept
         -> Matrix<T, I, J>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
+    explicit constexpr Matrix(const Matrix<U, A, B>& matrix);
+
+    template <detail::Arithmetic U, std::size_t A, std::size_t B>
+    explicit constexpr Matrix(Matrix<U, A, B>&& array) noexcept;
+
+    template <detail::Arithmetic U, std::size_t A, std::size_t B>
+    constexpr auto operator=(const Matrix<U, A, B>& matrix) -> Matrix<T, I, J>&;
+
+    template <detail::Arithmetic U, std::size_t A, std::size_t B>
     constexpr auto operator=(Matrix<U, A, B>&& matrix) noexcept
         -> Matrix<T, I, J>&;
+
+    template <detail::Arithmetic U>
+    constexpr auto operator=(const std::initializer_list<U>& list)
+        -> Matrix<T, I, J>&;
+
+    template <detail::Arithmetic U>
+    constexpr auto operator=(std::initializer_list<U>&& list)
+        -> Matrix<T, I, J>&;
+
+    template <detail::Arithmetic U, std::size_t A, std::size_t B>
+    explicit constexpr operator Matrix<U, A, B>() const;
 
     constexpr auto underlying_array() -> T**;
 
@@ -167,6 +176,10 @@ class Matrix {
     constexpr inline auto operator==(const Matrix<U, A, B>& matrix) const
         -> bool;
 
+    template <detail::Arithmetic U>
+    constexpr inline auto operator==(const std::initializer_list<U>& list) const
+        -> bool;
+
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     constexpr inline auto operator!=(const Matrix<U, A, B>& matrix) const
         -> bool;
@@ -180,7 +193,7 @@ class Matrix {
     constexpr auto operator()(std::size_t row, std::size_t col) const
         -> const T&;
 
-    constexpr auto at(std::size_t row, std::size_t col) const -> T;
+    constexpr auto at(std::size_t row, std::size_t col) const -> const T;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     friend constexpr auto operator<<(
@@ -234,77 +247,11 @@ class Matrix {
         friend class Matrix;
     };
 
-    class reverse_iterator {
-       private:
-        Matrix<T, I, J>& matrix;
-        std::size_t row;
-        std::size_t col;
-
-       public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
-
-        reverse_iterator(
-            Matrix<T, I, J>& matrix,
-            std::size_t row,
-            std::size_t col);
-        auto operator*() const -> const T&;
-        auto operator*() -> T&;
-        auto operator++() -> reverse_iterator&;
-        auto operator++(int) -> reverse_iterator;
-        auto operator==(const reverse_iterator& iter) const -> bool;
-        auto operator!=(const reverse_iterator& iter) const -> bool;
-        friend class Matrix;
-    };
-
-    class const_reverse_iterator {
-       private:
-        Matrix<T, I, J>& matrix;
-        std::size_t row;
-        std::size_t col;
-
-       public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
-
-        const_reverse_iterator(
-            Matrix<T, I, J>& matrix,
-            std::size_t row,
-            std::size_t col);
-        auto operator*() const -> const T&;
-        auto operator*() -> T&;
-        auto operator++() -> const_reverse_iterator&;
-        auto operator++(int) -> const_reverse_iterator;
-        auto operator==(const const_reverse_iterator& iter) const -> bool;
-        auto operator!=(const const_reverse_iterator& iter) const -> bool;
-        friend class Matrix;
-    };
-    // NOLINTEND(hicpp-named-parameter,readability-named-parameter)
-
     constexpr auto begin() -> iterator;
     constexpr auto end() -> iterator;
 
     constexpr auto begin() const -> const_iterator;
     constexpr auto end() const -> const_iterator;
-
-    constexpr auto cbegin() -> const_iterator;
-    constexpr auto rbegin() -> reverse_iterator;
-    constexpr auto crbegin() -> const_reverse_iterator;
-    constexpr auto cbegin() const -> const_iterator;
-    constexpr auto rbegin() const -> reverse_iterator;
-    constexpr auto crbegin() const -> const_reverse_iterator;
-    constexpr auto cend() -> const_iterator;
-    constexpr auto rend() -> reverse_iterator;
-    constexpr auto crend() -> const_reverse_iterator;
-    constexpr auto cend() const -> const_iterator;
-    constexpr auto rend() const -> reverse_iterator;
-    constexpr auto crend() const -> const_reverse_iterator;
 };
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -315,21 +262,20 @@ class Row {
     std::size_t n_row;
 
    public:
-    explicit Row(Matrix<T, I, J>& matrix, std::size_t n_row);
+    explicit Row(Matrix<T, I, J>&, std::size_t);
     ~Row() = default;
-    Row(const Row& row) = default;
-    Row(Row&& row) noexcept = default;
-    constexpr auto operator=(const Row& row) -> Row&;
-    constexpr auto operator=(Row&& row) noexcept -> Row&;
+    Row(const Row&) = default;
+    Row(Row&&) noexcept = default;
+    constexpr auto operator=(const Row&) -> Row<T, I, J>& = default;
+    constexpr auto operator=(Row&&) noexcept -> Row<T, I, J>& = default;
+    constexpr auto operator=(const std::vector<T>&) -> Row<T, I, J>&;
 
-    auto operator[](std::size_t col) -> T&;
+    auto operator[](std::size_t) -> T&;
 
-    auto get_row() -> std::vector<T>&;
     auto get_row() const -> const std::vector<T>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    friend auto operator<<(std::ostream& ostream, const Row& row)
-        -> std::ostream&;
+    friend auto operator<<(std::ostream&, const Row&) -> std::ostream&;
 };
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -340,22 +286,21 @@ class Crow {
     std::size_t n_row;
 
    public:
-    explicit Crow(const Matrix<T, I, J>& matrix, std::size_t n_row);
+    explicit Crow(const Matrix<T, I, J>&, std::size_t);
     ~Crow() = default;
-    Crow(const Crow& row) = default;
-    Crow(Crow&& row) noexcept = default;
-    constexpr auto operator=(const Crow& row) -> Crow&;
-    constexpr auto operator=(Crow&& row) noexcept -> Crow&;
+    Crow(const Crow&) = default;
+    Crow(Crow&&) noexcept = default;
+    constexpr auto operator=(const Crow&) -> Crow<T, I, J>& = default;
+    constexpr auto operator=(Crow&&) noexcept -> Crow<T, I, J>& = default;
 
-    auto operator[](std::size_t col) const -> T&;
+    auto operator[](std::size_t) const -> T;
 
-    auto get_row() -> std::vector<T>&;
     auto get_row() const -> const std::vector<T>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    friend auto operator<<(std::ostream& ostream, const Crow& row)
-        -> std::ostream&;
+    friend auto operator<<(std::ostream&, const Crow&) -> std::ostream&;
 };
+// NOLINTEND(hicpp-named-parameter,readability-named-parameter)
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix()
@@ -421,10 +366,10 @@ constexpr Matrix<T, I, J>::Matrix(
 
     for (const auto& elem : elems) {
         if (elems.size() * elem.size() != I * J) [[unlikely]] {
-            std::cout
-                << "Matrix::Matrix() cannot initialize matrix with incorrect "
-                   "number of elements."
-                << std::endl;
+            throw detail::exceptions::invalid_argument_input{
+                "Matrix::Matrix() cannot initialize matrix with incorrect "
+                "number of elements."
+            };
             return;
         }
     }
@@ -467,16 +412,6 @@ constexpr Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& matrix)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-template <detail::Arithmetic U, std::size_t A, std::size_t B>
-constexpr Matrix<T, I, J>::Matrix(const Matrix<U, A, B>& matrix)
-{
-    static_assert(detail::is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I == A and J == B, "Matrix::invalid size");
-
-    *this = matrix;
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::operator=(const Matrix<T, I, J>& matrix)
     -> Matrix<T, I, J>&
 {
@@ -489,19 +424,6 @@ constexpr auto Matrix<T, I, J>::operator=(const Matrix<T, I, J>& matrix)
             }
         }
     }
-    return *this;
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-template <detail::Arithmetic U, std::size_t A, std::size_t B>
-constexpr auto Matrix<T, I, J>::operator=(const Matrix<U, A, B>& matrix)
-    -> Matrix<T, I, J>&
-{
-    static_assert(detail::is_same_v<T, U>, "Matrix::invalid type");
-    static_assert(I == A and J == B, "Matrix::invalid size");
-
-    *this = matrix;
-
     return *this;
 }
 
@@ -529,6 +451,15 @@ constexpr auto Matrix<T, I, J>::operator=(Matrix<T, I, J>&& matrix) noexcept
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
+constexpr Matrix<T, I, J>::Matrix(const Matrix<U, A, B>& matrix)
+{
+    static_assert(detail::is_convertible_v<T, U>, "Matrix::invalid type");
+
+    *this = matrix;
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
+template <detail::Arithmetic U, std::size_t A, std::size_t B>
 constexpr Matrix<T, I, J>::Matrix(Matrix<U, A, B>&& array) noexcept
     : size_{ 0, 0 }
 {
@@ -536,6 +467,18 @@ constexpr Matrix<T, I, J>::Matrix(Matrix<U, A, B>&& array) noexcept
     static_assert(I == A and J == B, "Matrix::invalid size");
 
     *this = std::move(array);
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
+template <detail::Arithmetic U, std::size_t A, std::size_t B>
+constexpr auto Matrix<T, I, J>::operator=(const Matrix<U, A, B>& matrix)
+    -> Matrix<T, I, J>&
+{
+    static_assert(detail::is_same_v<T, U>, "Matrix::invalid type");
+
+    *this = matrix;
+
+    return *this;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -549,6 +492,80 @@ constexpr auto Matrix<T, I, J>::operator=(Matrix<U, A, B>&& matrix) noexcept
     *this = std::move(matrix);
 
     return *this;
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
+template <detail::Arithmetic U>
+constexpr auto Matrix<T, I, J>::operator=(const std::initializer_list<U>& list)
+    -> Matrix<T, I, J>&
+{
+    static_assert(detail::is_same_v<T, U>, "Matrix::invalid_type");
+
+    if (I * J != list.size()) {
+        throw detail::exceptions::invalid_argument_input{
+            "Matrix::operator= std::initializer_list invalid size"
+        };
+    }
+
+    auto row_num = 0;
+    auto col_num = 0;
+    for (const auto& elem : list) {
+        array[row_num][col_num] = elem;
+        if (col_num != J - 1) { ++col_num; }
+        else if (row_num != I - 1) {
+            ++row_num;
+            col_num = 0;
+        }
+    }
+
+    return *this;
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
+template <detail::Arithmetic U>
+constexpr auto Matrix<T, I, J>::operator=(std::initializer_list<U>&& list)
+    -> Matrix<T, I, J>&
+{
+    static_assert(detail::is_same_v<T, U>, "Matrix::invalid_type");
+
+    if (I * J != list.size()) {
+        throw detail::exceptions::invalid_argument_input{
+            "Matrix::operator= std::initializer_list invalid size"
+        };
+    }
+
+    auto row_num = 0;
+    auto col_num = 0;
+    for (const auto& elem : list) {
+        array[row_num][col_num] = std::move(elem);
+        if (col_num != J - 1) { ++col_num; }
+        else if (row_num != I - 1) {
+            ++row_num;
+            col_num = 0;
+        }
+    }
+
+    return *this;
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
+template <detail::Arithmetic U, std::size_t A, std::size_t B>
+inline constexpr Matrix<T, I, J>::operator Matrix<U, A, B>() const
+{
+    static_assert(A >= I && B >= J, "Matrix::invalid size");
+
+    Matrix<U, A, B> result;
+
+    for (std::size_t i = 0; i < A; ++i) {
+        for (std::size_t j = 0; j < B; ++j) {
+            if (i < I and j < J) { result[i][j] = static_cast<U>(array[i][j]); }
+            else {
+                result[i][j] = U();
+            }
+        }
+    }
+
+    return result;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -594,9 +611,7 @@ constexpr auto Matrix<T, I, J>::transpose() const -> Matrix<T, J, I>
 {
     Matrix<T, J, I> result;
     for (std::size_t i = 0; i < I; ++i) {
-        for (std::size_t j = 0; j < J; ++j) {
-            result.underlying_array()[j][i] = this->underlying_array()[i][j];
-        }
+        for (std::size_t j = 0; j < J; ++j) { result[j][i] = this[i][j]; }
     }
 
     return result;
@@ -856,13 +871,11 @@ constexpr auto Matrix<T, I, J>::operator*=(const Matrix<U, A, B>& matrix)
     static_assert(J == A, "Matrix::invalid size");
     static_assert(detail::is_convertible_v<T, U>, "Matrix::invalid type");
 
-    realloc(I, B);
-
-    for (std::size_t i = 0; i < temp.size_.first; ++i) {
-        for (std::size_t j = 0; j < matrix.size_.second; ++j) {
+    for (std::size_t i = 0; i < temp.size().first; ++i) {
+        for (std::size_t j = 0; j < matrix.size().second; ++j) {
             auto sum = static_cast<T>(0);
-            for (std::size_t k = 0; k < temp.size_.second; ++k) {
-                sum += temp[i][k] * matrix.array[k][j];
+            for (std::size_t k = 0; k < temp.size().second; ++k) {
+                sum += temp[i][k] * matrix[k][j];
             }
             array[i][j] = sum;
         }
@@ -945,11 +958,39 @@ template <
     std::size_t A,
     std::size_t B>
 constexpr auto operator*(const Matrix<T, I, J>& lhs, const Matrix<U, A, B>& rhs)
-    -> Matrix<T, I, J>
+    -> Matrix<T, I, B>
 {
     auto tmp = lhs;
-    tmp *= rhs;
-    return tmp;
+
+    return multiply(tmp, rhs);
+}
+
+template <
+    detail::Arithmetic T,
+    std::size_t I,
+    std::size_t J,
+    detail::Arithmetic U,
+    std::size_t A,
+    std::size_t B>
+inline constexpr auto multiply(
+    const Matrix<T, I, J>& lhs,
+    const Matrix<U, A, B>& rhs) -> Matrix<T, I, B>
+{
+    static_assert(J == A, "Matrix::invalid size");
+
+    Matrix<T, I, B> result;
+
+    for (std::size_t i = 0; i < I; ++i) {
+        for (std::size_t j = 0; j < B; ++j) {
+            T sum = 0;
+            for (std::size_t k = 0; k < J; ++k) {
+                sum += lhs[i][k] * rhs[k][j];
+            }
+            result[i][j] = sum;
+        }
+    }
+
+    return result;
 }
 
 template <
@@ -994,9 +1035,32 @@ constexpr inline auto Matrix<T, I, J>::operator==(
         return false;
     }
 
-    for (std::size_t i = 0; i < J; ++i) {
+    for (std::size_t i = 0; i < I; ++i) {
         for (std::size_t j = 0; j < J; ++j) {
-            if (this->array[i][j] != matrix.array[i][j]) { return false; }
+            if (array[i][j] != matrix[i][j]) { return false; }
+        }
+    }
+
+    return true;
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
+template <detail::Arithmetic U>
+constexpr inline auto Matrix<T, I, J>::operator==(
+    const std::initializer_list<U>& list) const -> bool
+{
+    if (I * J != list.size() or not detail::is_convertible_v<T, U>) {
+        return false;
+    }
+
+    auto row_num = 0;
+    auto col_num = 0;
+    for (const auto& elem : list) {
+        if (array[row_num][col_num] != elem) { return false; }
+        if (col_num != J - 1) { ++col_num; }
+        else if (row_num != I - 1) {
+            ++row_num;
+            col_num = 0;
         }
     }
 
@@ -1044,6 +1108,25 @@ Row<T, I, J>::Row(Matrix<T, I, J>& matrix, std::size_t n_row)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
+constexpr auto Row<T, I, J>::operator=(const std::vector<T>& new_row)
+    -> Row<T, I, J>&
+{
+    if (not(row.size() == new_row.size())) {
+        throw detail::exceptions::invalid_argument_input{ "Row::invalid size" };
+    }
+
+    row = new_row;
+
+    std::size_t col_idx = 0;
+    for (const auto elem : row) {
+        matrix.underlying_array()[n_row][col_idx] = elem;
+        ++col_idx;
+    }
+
+    return *this;
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Row<T, I, J>::operator[](std::size_t col) -> T&
 {
     if (col > (J - 1)) {
@@ -1052,12 +1135,6 @@ auto Row<T, I, J>::operator[](std::size_t col) -> T&
         };
     }
     return matrix(n_row, col);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Row<T, I, J>::get_row() -> std::vector<T>&
-{
-    return row;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -1074,7 +1151,7 @@ Crow<T, I, J>::Crow(const Matrix<T, I, J>& matrix, std::size_t n_row)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Crow<T, I, J>::operator[](std::size_t col) const -> T&
+auto Crow<T, I, J>::operator[](std::size_t col) const -> T
 {
     if (col > (J - 1)) {
         throw detail::exceptions::out_of_range_input{
@@ -1082,12 +1159,6 @@ auto Crow<T, I, J>::operator[](std::size_t col) const -> T&
         };
     }
     return matrix(n_row, col);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Crow<T, I, J>::get_row() -> std::vector<T>&
-{
-    return row;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -1296,85 +1367,6 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::end() const -> Matrix<T, I, J>::const_iterator
 {
     return const_iterator(*this, I, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::cbegin() -> Matrix<T, I, J>::const_iterator
-{
-    return iterator(*this, 0, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::cbegin() const
-    -> Matrix<T, I, J>::const_iterator
-{
-    return iterator(*this, 0, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::cend() -> Matrix<T, I, J>::const_iterator
-{
-    return iterator(*this, I, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::cend() const -> Matrix<T, I, J>::const_iterator
-{
-    return iterator(*this, I, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::rbegin() -> Matrix<T, I, J>::reverse_iterator
-{
-    return iterator(*this, I, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::rbegin() const
-    -> Matrix<T, I, J>::reverse_iterator
-{
-    return iterator(*this, I, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::rend() -> Matrix<T, I, J>::reverse_iterator
-{
-    return iterator(*this, 0, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::rend() const
-    -> Matrix<T, I, J>::reverse_iterator
-{
-    return iterator(*this, 0, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::crbegin()
-    -> Matrix<T, I, J>::const_reverse_iterator
-{
-    return iterator(*this, I, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::crbegin() const
-    -> Matrix<T, I, J>::const_reverse_iterator
-{
-    return iterator(*this, I, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::crend()
-    -> Matrix<T, I, J>::const_reverse_iterator
-{
-    return iterator(*this, 0, 0);
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::crend() const
-    -> Matrix<T, I, J>::const_reverse_iterator
-{
-    return iterator(*this, 0, 0);
 }
 
 }  // namespace mtl
