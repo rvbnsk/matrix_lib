@@ -1,3 +1,12 @@
+//                     _          _         _  _  _
+//                    | |        (_)       | |(_)| |
+//   _ __ ___    __ _ | |_  _ __  _ __  __ | | _ | |__
+//  | '_ ` _ \  / _` || __|| '__|| |\ \/ / | || || '_ |
+//  | | | | | || (_| || |_ | |   | | >  <  | || || |_) |
+//  |_| |_| |_| \__,_| \__||_|   |_|/_/\_\ |_||_||_.__/
+//
+//
+
 #ifndef MTL_MATRIX_HPP
 #define MTL_MATRIX_HPP
 
@@ -67,7 +76,6 @@ class Matrix {
     bool has_been_reallocated{ false };
 
    public:
-    // CTORS
     constexpr Matrix();
 
     constexpr ~Matrix();
