@@ -28,6 +28,14 @@ TEST_CASE("Creating object - default constructor")
     }
 }
 
+TEST_CASE("Creating object - big matrix size")
+{
+    constexpr std::size_t size = 10000;
+    mtl::Matrix<int, size, size> m1;
+
+    SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
+}
+
 TEST_CASE("Creating object - fill with value")
 {
     constexpr std::size_t sg_size = 2;

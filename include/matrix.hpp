@@ -47,14 +47,15 @@ struct invalid_argument_input : public std::invalid_argument {
 // clang-format off
 template <typename Ta_>
 concept Arithmetic = is_arithmetic_v<Ta_> and requires(Ta_ a_type) {
-                                                  a_type + a_type;
-                                                  a_type - a_type;
-                                                  a_type * a_type;
-                                                  a_type == a_type;
-                                                  a_type != a_type;
-                                              };
+    a_type + a_type;
+    a_type - a_type;
+    a_type * a_type;
+    a_type == a_type;
+    a_type != a_type;
+};
 
 template <class Ta_, class Tb_>
+
 concept Scalar = std::is_scalar_v<Tb_>
                  and requires(Ta_ a_type, Tb_ b_type) { a_type * b_type; };
 // clang-format on
@@ -155,6 +156,7 @@ class Matrix {
     constexpr auto dealloc() const;
 
     constexpr auto size() const noexcept -> std::pair<std::size_t, std::size_t>;
+    // constexpr auto size() const noexcept -> std::tuple<std::size_t>;
 
     constexpr auto size_i() const noexcept -> std::size_t;
 
