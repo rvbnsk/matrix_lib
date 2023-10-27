@@ -28,6 +28,25 @@ TEST_CASE("Creating object - default constructor")
     }
 }
 
+TEST_CASE("Reallocation")
+{
+    constexpr std::size_t base_size = 2;
+    mtl::Matrix<int, base_size, base_size> m{ 1, 2, 3, 4 };
+
+    REQUIRE(not m.is_reallocated());
+
+    REQUIRE(m.size_i() == base_size);
+    REQUIRE(m.size_j() == base_size);
+
+    constexpr std::size_t new_size = 3;
+    m.realloc(new_size, new_size);
+
+    REQUIRE(m.is_reallocated());
+
+    REQUIRE(m.size_i() == new_size);
+    REQUIRE(m.size_j() == new_size);
+}
+
 TEST_CASE("Creating object - big matrix size")
 {
     constexpr std::size_t size = 10000;
@@ -241,6 +260,16 @@ TEST_CASE("Range based for loop")
         for (auto elem : matrix) { REQUIRE(elem == value++); }
     }
 
+    // SECTION("Matrix with ref")
+    // {
+    //     mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+
+    //     int value = 1;
+    //     constexpr int new_value = 4;
+
+    //     for (auto& elem : matrix) { REQUIRE(elem == value++); }
+    // }
+
     SECTION("const Matrix")
     {
         mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
@@ -248,6 +277,16 @@ TEST_CASE("Range based for loop")
         int value = 1;
 
         for (const auto elem : matrix) { REQUIRE(elem == value++); }
+    }
+
+    SECTION("With reallocation")
+    {
+        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+
+        matrix.realloc(3, 3);
+
+        constexpr int value = 1;
+        for (const auto elem : matrix) { REQUIRE(elem == value); }
     }
 }
 
