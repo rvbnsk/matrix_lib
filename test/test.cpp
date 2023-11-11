@@ -7,13 +7,17 @@ TEST_CASE("Creating object - default constructor")
     mtl::Matrix<int, sg_size, sg_size> m1;
     constexpr std::pair<std::size_t, std::size_t> size{ sg_size, sg_size };
 
-    SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
+    SECTION("Allocation")
+    {
+        REQUIRE(m1.underlying_array() != nullptr);
+        REQUIRE(not m1.is_reallocated());
+    }
 
     SECTION("Size")
     {
         REQUIRE(m1.size() == size);
-        REQUIRE(m1.size_i() == sg_size);
-        REQUIRE(m1.size_j() == sg_size);
+        REQUIRE(m1.row_size() == sg_size);
+        REQUIRE(m1.col_size() == sg_size);
     }
 
     SECTION("Reallocation")
@@ -23,8 +27,8 @@ TEST_CASE("Creating object - default constructor")
         std::pair<std::size_t, std::size_t> new_size = { new_sg_size,
                                                          new_sg_size };
         REQUIRE(m1.size() == new_size);
-        REQUIRE(m1.size_i() == new_sg_size);
-        REQUIRE(m1.size_j() == new_sg_size);
+        REQUIRE(m1.row_size() == new_sg_size);
+        REQUIRE(m1.col_size() == new_sg_size);
     }
 }
 
@@ -35,16 +39,16 @@ TEST_CASE("Reallocation")
 
     REQUIRE(not m.is_reallocated());
 
-    REQUIRE(m.size_i() == base_size);
-    REQUIRE(m.size_j() == base_size);
+    REQUIRE(m.row_size() == base_size);
+    REQUIRE(m.col_size() == base_size);
 
     constexpr std::size_t new_size = 3;
     m.realloc(new_size, new_size);
 
     REQUIRE(m.is_reallocated());
 
-    REQUIRE(m.size_i() == new_size);
-    REQUIRE(m.size_j() == new_size);
+    REQUIRE(m.row_size() == new_size);
+    REQUIRE(m.col_size() == new_size);
 }
 
 TEST_CASE("Creating object - big matrix size")
@@ -68,8 +72,8 @@ TEST_CASE("Creating object - fill with value")
         REQUIRE(
             m1.size()
             == std::pair<std::size_t, std::size_t>{ sg_size, sg_size });
-        REQUIRE(m1.size_i() == sg_size);
-        REQUIRE(m1.size_j() == sg_size);
+        REQUIRE(m1.row_size() == sg_size);
+        REQUIRE(m1.col_size() == sg_size);
     }
 
     SECTION("Value")
@@ -126,6 +130,39 @@ TEST_CASE("Creating object - nested initializer list")
         REQUIRE_THROWS_AS(
             initialize_with_invalid_list(),
             mtl::detail::exceptions::invalid_argument_input);
+    }
+}
+
+TEST_CASE("Copying matrix")
+{
+    SECTION("Same type CTOR")
+    {
+        const mtl::Matrix<int, 2, 2> m1{ 1, 2, 3, 4 };
+        const mtl::Matrix<int, 2, 2> m2{ m1 };
+        REQUIRE(m1 == m2);
+    }
+
+    SECTION("Different type CTOR")
+    {
+        const mtl::Matrix<int, 2, 2> m1{ 1, 2, 3, 4 };
+        const mtl::Matrix<double, 2, 2> m2{ m1 };
+        REQUIRE(m1 == m2);
+    }
+
+    SECTION("Same type assignment operator")
+    {
+        const mtl::Matrix<int, 2, 2> m1{ 1, 2, 3, 4 };
+        mtl::Matrix<int, 2, 2> m2;
+        m2 = m1;
+        REQUIRE(m1 == m2);
+    }
+
+    SECTION("Different type assignment operator")
+    {
+        const mtl::Matrix<int, 2, 2> m1{ 1, 2, 3, 4 };
+        mtl::Matrix<double, 2, 2> m2;
+        m2 = m1;
+        REQUIRE(m1 == m2);
     }
 }
 
@@ -228,8 +265,8 @@ TEST_CASE("operator[][]")
 
         int value = 1;
 
-        for (std::size_t row = 0; row < matrix.size_i(); ++row) {
-            for (std::size_t col = 0; col < matrix.size_j(); ++col) {
+        for (std::size_t row = 0; row < matrix.row_size(); ++row) {
+            for (std::size_t col = 0; col < matrix.col_size(); ++col) {
                 REQUIRE(matrix[row][col] == value++);
             }
         }
@@ -241,8 +278,8 @@ TEST_CASE("operator[][]")
 
         int value = 1;
 
-        for (std::size_t row = 0; row < matrix.size_i(); ++row) {
-            for (std::size_t col = 0; col < matrix.size_j(); ++col) {
+        for (std::size_t row = 0; row < matrix.row_size(); ++row) {
+            for (std::size_t col = 0; col < matrix.col_size(); ++col) {
                 REQUIRE(matrix[row][col] == value++);
             }
         }
@@ -301,14 +338,14 @@ TEST_CASE("is diagonal")
 
 TEST_CASE("Transposition")
 {
-    SECTION("TC01")
+    SECTION("Same size transposition")
     {
         mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
         const mtl::Matrix<int, 2, 2> result{ 1, 3, 2, 4 };
         REQUIRE(matrix.transpose() == result);
     }
 
-    SECTION("TC02")
+    SECTION("Different size transposition")
     {
         mtl::Matrix<double, 3, 2> matrix{ { 1, 2 }, { 3, 4 }, { 5, 6 } };
         const mtl::Matrix<double, 2, 3> result{ { 1, 3, 5 }, { 2, 4, 6 } };
@@ -322,8 +359,8 @@ TEST_CASE("Underlying array")
     const auto* underlying = matrix.underlying_array();
     REQUIRE(underlying != nullptr);
 
-    for (std::size_t i = 0; i < matrix.size_i(); ++i) {
-        for (std::size_t j = 0; j < matrix.size_j(); ++j) {
+    for (std::size_t i = 0; i < matrix.row_size(); ++i) {
+        for (std::size_t j = 0; j < matrix.col_size(); ++j) {
             REQUIRE(matrix[i][j] == underlying[i][j]);
         }
     }
