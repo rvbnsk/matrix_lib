@@ -210,12 +210,12 @@ struct Matrix final {
         using const_reference = const T&;
 
         iterator(Matrix<T, I, J>& matrix, std::size_t row, std::size_t col);
-        auto operator*() -> reference;
-        auto operator*() const -> const_reference;
-        auto operator++() -> iterator&;
-        auto operator++(int) -> iterator;
-        inline auto operator==(const iterator& iter) const -> bool;
-        inline auto operator!=(const iterator& iter) const -> bool;
+        auto operator*() noexcept -> reference;
+        auto operator*() const noexcept -> const_reference;
+        auto operator++() noexcept -> iterator&;
+        auto operator++(int) noexcept -> iterator;
+        inline auto operator==(const iterator& iter) const noexcept -> bool;
+        inline auto operator!=(const iterator& iter) const noexcept -> bool;
         friend struct Matrix;
     };
 
@@ -245,11 +245,11 @@ struct Matrix final {
         friend struct Matrix;
     };
 
-    constexpr auto begin() -> iterator;
-    constexpr auto end() -> iterator;
+    auto begin() -> iterator;
+    auto end() -> iterator;
 
-    constexpr auto begin() const -> const_iterator;
-    constexpr auto end() const -> const_iterator;
+    auto begin() const -> const_iterator;
+    auto end() const -> const_iterator;
 };
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -1254,23 +1254,15 @@ Matrix<T, I, J>::const_iterator::const_iterator(
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator*() -> T&
+auto Matrix<T, I, J>::iterator::operator*() noexcept -> T&
 {
-    if (row >= matrix.row_size() or col >= matrix.col_size()) {
-        static T default_value{};
-        return default_value;
-    }
-    return matrix(row, col);
+    return matrix.underlying_array()[row][col];
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator*() const -> const T&
+auto Matrix<T, I, J>::iterator::operator*() const noexcept -> const T&
 {
-    if (row >= matrix.row_size() or col >= matrix.col_size()) {
-        static T default_value{};
-        return default_value;
-    }
-    return matrix(row, col);
+    return matrix.underlying_array()[row][col];
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -1284,12 +1276,13 @@ auto Matrix<T, I, J>::const_iterator::operator*() const -> const T&
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++() -> Matrix<T, I, J>::iterator&
+auto Matrix<T, I, J>::iterator::operator++() noexcept
+    -> Matrix<T, I, J>::iterator&
 {
-    if (col != matrix.col_size() - 1) { ++col; }
-    else {
-        ++row;
+    ++col;
+    if (col == matrix.col_size()) [[unlikely]] {
         col = 0;
+        ++row;
     }
 
     return *this;
@@ -1299,17 +1292,18 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::const_iterator::operator++()
     -> Matrix<T, I, J>::const_iterator&
 {
-    if (col != matrix.col_size() - 1) { ++col; }
-    else {
-        ++row;
+    ++col;
+    if (col == matrix.col_size()) [[unlikely]] {
         col = 0;
+        ++row;
     }
 
     return *this;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator++(int) -> Matrix<T, I, J>::iterator
+auto Matrix<T, I, J>::iterator::operator++(int) noexcept
+    -> Matrix<T, I, J>::iterator
 {
     auto temp = *this;
 
@@ -1330,21 +1324,22 @@ auto Matrix<T, I, J>::const_iterator::operator++(int)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-inline auto Matrix<T, I, J>::iterator::operator==(const iterator& iter) const
-    -> bool
+inline auto Matrix<T, I, J>::iterator::operator==(
+    const iterator& iter) const noexcept -> bool
 {
-    return this->matrix == iter.matrix and row == iter.row and col == iter.col;
+    return row == iter.row and col == iter.col;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 inline auto Matrix<T, I, J>::const_iterator::operator==(
     const const_iterator& iter) const -> bool
 {
-    return this->matrix == iter.matrix and row == iter.row and col == iter.col;
+    return row == iter.row and col == iter.col;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::iterator::operator!=(const iterator& iter) const -> bool
+auto Matrix<T, I, J>::iterator::operator!=(const iterator& iter) const noexcept
+    -> bool
 {
     return not(*this == iter);
 }
@@ -1357,25 +1352,25 @@ auto Matrix<T, I, J>::const_iterator::operator!=(
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::begin() -> Matrix<T, I, J>::iterator
+auto Matrix<T, I, J>::begin() -> Matrix<T, I, J>::iterator
 {
     return iterator(*this, 0, 0);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::begin() const -> Matrix<T, I, J>::const_iterator
+auto Matrix<T, I, J>::begin() const -> Matrix<T, I, J>::const_iterator
 {
     return const_iterator(*this, 0, 0);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::end() -> Matrix<T, I, J>::iterator
+auto Matrix<T, I, J>::end() -> Matrix<T, I, J>::iterator
 {
     return iterator(*this, row_size(), 0);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::end() const -> Matrix<T, I, J>::const_iterator
+auto Matrix<T, I, J>::end() const -> Matrix<T, I, J>::const_iterator
 {
     return const_iterator(*this, row_size(), 0);
 }
