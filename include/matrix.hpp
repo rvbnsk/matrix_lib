@@ -396,14 +396,27 @@ constexpr Matrix<T, I, J>::Matrix(const U& value)
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& matrix)
 {
+    size_ = matrix.size();
+    has_been_reallocated = matrix.is_reallocated();
+
     alloc();
-    *this = matrix;
+
+    for (std::size_t i = 0; i < row_size(); ++i) {
+        for (std::size_t j = 0; j < col_size(); ++j) {
+            data[i][j] = matrix.data[i][j];
+        }
+    }
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::operator=(const Matrix<T, I, J>& matrix)
     -> Matrix<T, I, J>&
 {
+    size_ = matrix.size();
+    has_been_reallocated = matrix.is_reallocated();
+
+    alloc();
+
     if (&matrix != this) {
         for (std::size_t i = 0; i < row_size(); ++i) {
             for (std::size_t j = 0; j < col_size(); ++j) {
@@ -441,13 +454,20 @@ constexpr Matrix<T, I, J>::Matrix(const Matrix<U, A, B>& matrix)
         throw std::logic_error{ "Matrix::invalid type" };
     }
 
-    if (not(size() == matrix.size())) {
+    if (size() != matrix.size()) {
         throw std::logic_error{ "Matrix::invalid size" };
     }
 
+    size_ = matrix.size();
+    has_been_reallocated = matrix.is_reallocated();
+
     alloc();
 
-    *this = matrix;
+    for (std::size_t i = 0; i < row_size(); ++i) {
+        for (std::size_t j = 0; j < col_size(); ++j) {
+            data[i][j] = static_cast<T>(matrix.underlying_array()[i][j]);
+        }
+    }
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -463,14 +483,16 @@ constexpr auto Matrix<T, I, J>::operator=(const Matrix<U, A, B>& matrix)
         throw std::logic_error{ "Matrix::invalid size" };
     }
 
+    size_ = matrix.size();
+    has_been_reallocated = matrix.is_reallocated();
+
+    alloc();
+
     for (std::size_t i = 0; i < row_size(); ++i) {
         for (std::size_t j = 0; j < col_size(); ++j) {
             data[i][j] = static_cast<T>(matrix.underlying_array()[i][j]);
         }
     }
-
-    size_ = matrix.size();
-    has_been_reallocated = matrix.is_reallocated();
 
     return *this;
 }
@@ -716,6 +738,8 @@ constexpr auto Matrix<T, I, J>::alloc(
 {
     data = new T*[row_size_];
     for (std::size_t i = 0; i < row_size_; ++i) { data[i] = new T[col_size_]; }
+
+    size_ = std::make_pair(row_size_, col_size_);
 
     zeros();
 }
