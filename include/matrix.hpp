@@ -115,11 +115,9 @@ struct Matrix final {
 
     constexpr auto sort();
 
-    constexpr auto transpose() -> Matrix<T, J, I>;
-
     constexpr auto transpose() const -> Matrix<T, J, I>;
 
-    constexpr auto power(unsigned int power) -> Matrix<T, I, J>&;
+    constexpr auto power(unsigned int power) -> Matrix<T, I, J>;
 
     [[nodiscard]] constexpr auto det() const;
 
@@ -609,25 +607,12 @@ constexpr auto Matrix<T, I, J>::sort()
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::transpose() -> Matrix<T, J, I>
+constexpr auto Matrix<T, I, J>::transpose() const -> Matrix<T, J, I>
 {
     Matrix<T, J, I> result{};
     for (std::size_t i = 0; i < row_size(); ++i) {
         for (std::size_t j = 0; j < col_size(); ++j) {
             result.underlying_array()[j][i] = this->underlying_array()[i][j];
-        }
-    }
-
-    return result;
-}
-
-template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::transpose() const -> Matrix<T, J, I>
-{
-    Matrix<T, J, I> result;
-    for (std::size_t i = 0; i < row_size(); ++i) {
-        for (std::size_t j = 0; j < col_size(); ++j) {
-            result[j][i] = this[i][j];
         }
     }
 
@@ -802,12 +787,12 @@ constexpr auto Matrix<T, I, J>::is_reallocated() const noexcept -> bool
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::power(unsigned int power) -> Matrix<T, I, J>&
+constexpr auto Matrix<T, I, J>::power(unsigned int power) -> Matrix<T, I, J>
 {
-    const auto temp = *this;
-    for (unsigned int i = 0; i < (power - 1); ++i) { *this *= temp; }
+    auto result = *this;
+    for (unsigned int i = 0; i < (power - 1); ++i) { result *= *this; }
 
-    return *this;
+    return result;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -1026,7 +1011,7 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::operator^(const unsigned int& power)
     -> Matrix<T, I, J>&
 {
-    this->power(power);
+    *this = this->power(power);
 
     return *this;
 }
