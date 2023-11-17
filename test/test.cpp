@@ -128,6 +128,14 @@ TEST_CASE("Creating object - initializer list")
     }
 }
 
+TEST_CASE("Deduction guide")
+{
+    mtl::Matrix m1(5);
+    const std::pair<std::size_t, std::size_t> expected_size{ 1, 1 };
+    REQUIRE(m1.size() == expected_size);
+    REQUIRE(m1.at(0, 0) == 5);
+}
+
 TEST_CASE("Creating object - nested initializer list")
 {
     constexpr auto initialize_with_valid_list = []() {

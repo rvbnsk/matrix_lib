@@ -64,134 +64,130 @@ struct Matrix final {
     bool has_been_reallocated{ false };
 
    public:
-    constexpr Matrix();
+    constexpr Matrix() noexcept;
 
-    constexpr ~Matrix();
+    constexpr ~Matrix() noexcept;
 
-    explicit constexpr Matrix(const T& value);
+    explicit constexpr Matrix(const T&) noexcept;
 
     template <detail::Arithmetic U>
-    explicit constexpr Matrix(const U& value);
+    explicit constexpr Matrix(const U&);
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    constexpr Matrix(std::initializer_list<T> elems);
+    constexpr Matrix(std::initializer_list<T>);
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    constexpr Matrix(std::initializer_list<std::initializer_list<T>> elems);
+    constexpr Matrix(std::initializer_list<std::initializer_list<T>>);
 
-    constexpr Matrix(const Matrix<T, I, J>& matrix);
-    constexpr auto operator=(const Matrix<T, I, J>& matrix) -> Matrix<T, I, J>&;
-
-    template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr explicit Matrix(const Matrix<U, A, B>& matrix);
-
-    template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr auto operator=(const Matrix<U, A, B>& matrix) -> Matrix<T, I, J>&;
-
-    constexpr Matrix(Matrix<T, I, J>&& matrix) noexcept;
-    constexpr auto operator=(Matrix<T, I, J>&& matrix) noexcept
+    constexpr Matrix(const Matrix<T, I, J>&) noexcept;
+    constexpr auto operator=(const Matrix<T, I, J>&) noexcept
         -> Matrix<T, I, J>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr explicit Matrix(Matrix<U, A, B>&& matrix);
+    constexpr explicit Matrix(const Matrix<U, A, B>&);
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr auto operator=(Matrix<U, A, B>&& matrix) -> Matrix<T, I, J>&;
+    constexpr auto operator=(const Matrix<U, A, B>&) -> Matrix<T, I, J>&;
+
+    constexpr Matrix(Matrix<T, I, J>&&) noexcept;
+    constexpr auto operator=(Matrix<T, I, J>&&) noexcept -> Matrix<T, I, J>&;
+
+    template <detail::Arithmetic U, std::size_t A, std::size_t B>
+    constexpr explicit Matrix(Matrix<U, A, B>&&);
+
+    template <detail::Arithmetic U, std::size_t A, std::size_t B>
+    constexpr auto operator=(Matrix<U, A, B>&&) -> Matrix<T, I, J>&;
 
     template <detail::Arithmetic U>
-    constexpr auto operator=(const std::initializer_list<U>& list)
+    constexpr auto operator=(const std::initializer_list<U>&)
         -> Matrix<T, I, J>&;
 
     template <detail::Arithmetic U>
-    constexpr auto operator=(std::initializer_list<U>&& list)
-        -> Matrix<T, I, J>&;
+    constexpr auto operator=(std::initializer_list<U>&&) -> Matrix<T, I, J>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     explicit constexpr operator Matrix<U, A, B>() const;
 
-    constexpr auto underlying_array() const -> T**;
+    [[nodiscard]] constexpr auto underlying_array() const noexcept -> T**;
 
-    constexpr auto insert(const T& element);
+    constexpr auto insert(const T&) noexcept;
 
     constexpr auto sort();
 
-    constexpr auto transpose() const -> Matrix<T, J, I>;
+    [[nodiscard]] constexpr auto transpose() const noexcept -> Matrix<T, J, I>;
 
-    constexpr auto power(unsigned int power) -> Matrix<T, I, J>;
+    [[nodiscard]] constexpr auto power(unsigned int) -> Matrix<T, I, J>;
 
     [[nodiscard]] constexpr auto det() const;
 
-    [[nodiscard]] constexpr auto is_diagonal() const -> bool;
+    [[nodiscard]] constexpr auto is_diagonal() const noexcept -> bool;
 
    private:
-    constexpr auto zeros();
+    constexpr auto zeros() noexcept;
 
    public:
-    constexpr auto alloc();
-    constexpr auto alloc() const;
+    constexpr auto alloc() noexcept;
+    constexpr auto alloc() const noexcept;
 
    private:
-    constexpr auto alloc(std::size_t, std::size_t);
-    constexpr auto alloc(std::size_t, std::size_t) const;
+    constexpr auto alloc(std::size_t, std::size_t) noexcept;
+    constexpr auto alloc(std::size_t, std::size_t) const noexcept;
 
    public:
-    constexpr auto realloc(std::size_t, std::size_t);
+    constexpr auto realloc(std::size_t, std::size_t) noexcept;
 
     constexpr auto dealloc() noexcept;
     constexpr auto dealloc() const noexcept;
 
-    constexpr auto size() const noexcept -> std::pair<std::size_t, std::size_t>;
+    [[nodiscard]] constexpr auto size() const noexcept
+        -> std::pair<std::size_t, std::size_t>;
 
-    constexpr auto row_size() const noexcept -> std::size_t;
+    [[nodiscard]] constexpr auto row_size() const noexcept -> std::size_t;
 
-    constexpr auto col_size() const noexcept -> std::size_t;
+    [[nodiscard]] constexpr auto col_size() const noexcept -> std::size_t;
 
-    constexpr auto is_reallocated() const noexcept -> bool;
-
-    template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr auto operator+=(const Matrix<U, A, B>& matrix)
-        -> Matrix<T, I, J>&;
+    [[nodiscard]] constexpr auto is_reallocated() const noexcept -> bool;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr auto operator-=(const Matrix<U, A, B>& matrix)
-        -> Matrix<T, I, J>&;
+    constexpr auto operator+=(const Matrix<U, A, B>&) -> Matrix<T, I, J>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr auto operator*=(const Matrix<U, A, B>& matrix)
-        -> Matrix<T, I, B>&;
+    constexpr auto operator-=(const Matrix<U, A, B>&) -> Matrix<T, I, J>&;
+
+    template <detail::Arithmetic U, std::size_t A, std::size_t B>
+    constexpr auto operator*=(const Matrix<U, A, B>&) -> Matrix<T, I, B>&;
 
     template <detail::Scalar<T> U>
-    constexpr auto operator*=(const U& scalar) -> Matrix<T, I, J>&;
+    constexpr auto operator*=(const U&) -> Matrix<T, I, J>&;
 
     template <detail::Scalar<T> U>
-    constexpr auto operator*=(const std::vector<U>& vector) -> Matrix<T, I, J>&;
+    constexpr auto operator*=(const std::vector<U>&) -> Matrix<T, I, J>&;
 
-    constexpr auto operator^(const unsigned int& power) -> Matrix<T, I, J>&;
+    constexpr auto operator^(const unsigned int&) -> Matrix<T, I, J>&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr inline auto operator==(const Matrix<U, A, B>& matrix) const
-        -> bool;
+    [[nodiscard]] constexpr inline auto operator==(
+        const Matrix<U, A, B>&) const noexcept -> bool;
 
     template <detail::Arithmetic U>
-    constexpr inline auto operator==(const std::initializer_list<U>& list) const
-        -> bool;
+    [[nodiscard]] constexpr inline auto operator==(
+        const std::initializer_list<U>&) const noexcept -> bool;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    constexpr inline auto operator!=(const Matrix<U, A, B>& matrix) const
-        -> bool;
+    [[nodiscard]] constexpr inline auto operator!=(
+        const Matrix<U, A, B>&) const noexcept -> bool;
 
-    constexpr auto operator[](std::size_t row) -> Row<T, I, J>;
+    constexpr auto operator[](std::size_t) -> Row<T, I, J>;
 
-    constexpr auto operator[](std::size_t row) const -> Crow<T, I, J>;
+    constexpr auto operator[](std::size_t) const -> Crow<T, I, J>;
 
-    constexpr auto operator()(std::size_t row, std::size_t col) const -> T&;
+    constexpr auto operator()(std::size_t, std::size_t) const -> T&;
 
-    constexpr auto at(std::size_t row, std::size_t col) const -> T&;
+    constexpr auto at(std::size_t, std::size_t) const -> T&;
 
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
-    friend constexpr auto operator<<(
-        std::ostream& ostream,
-        const Matrix<U, A, B>& matrix) -> std::ostream&;
+    friend constexpr auto operator<<(std::ostream&, const Matrix<U, A, B>&)
+        -> std::ostream&;
 
     struct iterator {
        private:
@@ -207,13 +203,13 @@ struct Matrix final {
         using reference = T&;
         using const_reference = const T&;
 
-        iterator(Matrix<T, I, J>& matrix, std::size_t row, std::size_t col);
+        iterator(Matrix<T, I, J>&, std::size_t, std::size_t) noexcept;
         auto operator*() noexcept -> reference;
         auto operator*() const noexcept -> const_reference;
         auto operator++() noexcept -> iterator&;
         auto operator++(int) noexcept -> iterator;
-        inline auto operator==(const iterator& iter) const noexcept -> bool;
-        inline auto operator!=(const iterator& iter) const noexcept -> bool;
+        inline auto operator==(const iterator&) const noexcept -> bool;
+        inline auto operator!=(const iterator&) const noexcept -> bool;
         friend struct Matrix;
     };
 
@@ -232,22 +228,22 @@ struct Matrix final {
         using const_reference = const T&;
 
         const_iterator(
-            const Matrix<T, I, J>& matrix,
-            std::size_t row,
-            std::size_t col);
-        auto operator*() const -> const_reference;
-        auto operator++() -> const_iterator&;
-        auto operator++(int) -> const_iterator;
-        inline auto operator==(const const_iterator& iter) const -> bool;
-        inline auto operator!=(const const_iterator& iter) const -> bool;
+            const Matrix<T, I, J>&,
+            std::size_t,
+            std::size_t) noexcept;
+        auto operator*() const noexcept -> const_reference;
+        auto operator++() noexcept -> const_iterator&;
+        auto operator++(int) noexcept -> const_iterator;
+        inline auto operator==(const const_iterator&) const noexcept -> bool;
+        inline auto operator!=(const const_iterator&) const noexcept -> bool;
         friend struct Matrix;
     };
 
-    auto begin() -> iterator;
-    auto end() -> iterator;
+    auto begin() noexcept -> iterator;
+    auto end() noexcept -> iterator;
 
-    auto begin() const -> const_iterator;
-    auto end() const -> const_iterator;
+    auto begin() const noexcept -> const_iterator;
+    auto end() const noexcept -> const_iterator;
 };
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
@@ -298,8 +294,11 @@ struct Crow {
 };
 // NOLINTEND(hicpp-named-parameter,readability-named-parameter)
 
+template <detail::Arithmetic T>
+Matrix(T) -> Matrix<T, 1, 1>;
+
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr Matrix<T, I, J>::Matrix()
+constexpr Matrix<T, I, J>::Matrix() noexcept
 {
     alloc();
 
@@ -307,13 +306,13 @@ constexpr Matrix<T, I, J>::Matrix()
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr Matrix<T, I, J>::~Matrix()
+constexpr Matrix<T, I, J>::~Matrix() noexcept
 {
     dealloc();
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr Matrix<T, I, J>::Matrix(const T& value)
+constexpr Matrix<T, I, J>::Matrix(const T& value) noexcept
 {
     alloc();
 
@@ -394,11 +393,9 @@ constexpr Matrix<T, I, J>::Matrix(const U& value)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& matrix)
+constexpr Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& matrix) noexcept
+    : size_{ matrix.size() }, has_been_reallocated{ matrix.is_reallocated() }
 {
-    size_ = matrix.size();
-    has_been_reallocated = matrix.is_reallocated();
-
     alloc();
 
     for (std::size_t i = 0; i < row_size(); ++i) {
@@ -409,8 +406,8 @@ constexpr Matrix<T, I, J>::Matrix(const Matrix<T, I, J>& matrix)
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::operator=(const Matrix<T, I, J>& matrix)
-    -> Matrix<T, I, J>&
+constexpr auto Matrix<T, I, J>::operator=(
+    const Matrix<T, I, J>& matrix) noexcept -> Matrix<T, I, J>&
 {
     size_ = matrix.size();
     has_been_reallocated = matrix.is_reallocated();
@@ -610,13 +607,13 @@ inline constexpr Matrix<T, I, J>::operator Matrix<U, A, B>() const
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::underlying_array() const -> T**
+constexpr auto Matrix<T, I, J>::underlying_array() const noexcept -> T**
 {
     return data;
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::insert(const T& element)
+constexpr auto Matrix<T, I, J>::insert(const T& element) noexcept
 {
     for (std::size_t i = 0; i < row_size(); ++i) {
         for (std::size_t j = 0; j < col_size(); ++j) { data[i][j] = element; }
@@ -629,7 +626,7 @@ constexpr auto Matrix<T, I, J>::sort()
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::transpose() const -> Matrix<T, J, I>
+constexpr auto Matrix<T, I, J>::transpose() const noexcept -> Matrix<T, J, I>
 {
     Matrix<T, J, I> result{};
     for (std::size_t i = 0; i < row_size(); ++i) {
@@ -690,7 +687,7 @@ constexpr auto Matrix<T, I, J>::det() const
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::is_diagonal() const -> bool
+constexpr auto Matrix<T, I, J>::is_diagonal() const noexcept -> bool
 {
     if (row_size() != col_size()) { return false; }
 
@@ -706,7 +703,7 @@ constexpr auto Matrix<T, I, J>::is_diagonal() const -> bool
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::zeros()
+constexpr auto Matrix<T, I, J>::zeros() noexcept
 {
     for (std::size_t i = 0; i < row_size(); ++i) {
         for (std::size_t j = 0; j < col_size(); ++j) { data[i][j] = 1; }
@@ -714,7 +711,7 @@ constexpr auto Matrix<T, I, J>::zeros()
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::alloc()
+constexpr auto Matrix<T, I, J>::alloc() noexcept
 {
     data = new T*[row_size()];
     for (std::size_t i = 0; i < row_size(); ++i) {
@@ -723,7 +720,7 @@ constexpr auto Matrix<T, I, J>::alloc()
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-constexpr auto Matrix<T, I, J>::alloc() const
+constexpr auto Matrix<T, I, J>::alloc() const noexcept
 {
     data = new T*[row_size()];
     for (std::size_t i = 0; i < row_size(); ++i) {
@@ -734,7 +731,7 @@ constexpr auto Matrix<T, I, J>::alloc() const
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::alloc(
     std::size_t row_size_,
-    std::size_t col_size_)
+    std::size_t col_size_) noexcept
 {
     data = new T*[row_size_];
     for (std::size_t i = 0; i < row_size_; ++i) { data[i] = new T[col_size_]; }
@@ -747,7 +744,7 @@ constexpr auto Matrix<T, I, J>::alloc(
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::alloc(
     std::size_t row_size_,
-    std::size_t col_size_) const
+    std::size_t col_size_) const noexcept
 {
     data = new T*[row_size_];
     for (std::size_t i = 0; i < row_size_; ++i) { data[i] = new T[col_size_]; }
@@ -758,7 +755,7 @@ constexpr auto Matrix<T, I, J>::alloc(
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::realloc(
     std::size_t row_size_,
-    std::size_t col_size_)
+    std::size_t col_size_) noexcept
 {
     dealloc();
 
@@ -919,9 +916,6 @@ constexpr auto Matrix<T, I, J>::operator*=(const std::vector<U>& vector)
 
     const auto temp = *this;
 
-    // reallocation to <T, J, 1>
-    // this->realloc(J, 1);
-
     for (std::size_t i = 0; i < row_size(); ++i) {
         data[i][0] = 0;
         for (std::size_t j = 0; j < col_size(); ++j) {
@@ -1043,7 +1037,7 @@ constexpr auto Matrix<T, I, J>::operator^(const unsigned int& power)
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
 constexpr inline auto Matrix<T, I, J>::operator==(
-    const Matrix<U, A, B>& matrix) const -> bool
+    const Matrix<U, A, B>& matrix) const noexcept -> bool
 {
     if (row_size() != matrix.row_size() or col_size() != matrix.col_size()
         or not detail::is_convertible_v<T, U>) {
@@ -1062,7 +1056,7 @@ constexpr inline auto Matrix<T, I, J>::operator==(
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic U>
 constexpr inline auto Matrix<T, I, J>::operator==(
-    const std::initializer_list<U>& list) const -> bool
+    const std::initializer_list<U>& list) const noexcept -> bool
 {
     if (row_size() * col_size() != list.size()
         or not detail::is_convertible_v<T, U>) {
@@ -1086,7 +1080,7 @@ constexpr inline auto Matrix<T, I, J>::operator==(
 // clang-format off
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 template <detail::Arithmetic U, std::size_t A, std::size_t B>
-constexpr inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B>& matrix) const
+constexpr inline auto Matrix<T, I, J>::operator!=(const Matrix<U, A, B>& matrix) const noexcept
     -> bool
 {
     return not (*this == matrix);
@@ -1248,7 +1242,7 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::iterator::iterator(
     Matrix<T, I, J>& matrix_,
     std::size_t row_,
-    std::size_t col_)
+    std::size_t col_) noexcept
     : matrix{ matrix_ }, row{ row_ }, col{ col_ }
 {
 }
@@ -1257,7 +1251,7 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 Matrix<T, I, J>::const_iterator::const_iterator(
     const Matrix<T, I, J>& matrix_,
     std::size_t row_,
-    std::size_t col_)
+    std::size_t col_) noexcept
     : matrix{ matrix_ }, row{ row_ }, col{ col_ }
 {
 }
@@ -1275,7 +1269,7 @@ auto Matrix<T, I, J>::iterator::operator*() const noexcept -> const T&
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::const_iterator::operator*() const -> const T&
+auto Matrix<T, I, J>::const_iterator::operator*() const noexcept -> const T&
 {
     if (row >= matrix.row_size() or col >= matrix.col_size()) {
         static T default_value{};
@@ -1298,7 +1292,7 @@ auto Matrix<T, I, J>::iterator::operator++() noexcept
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::const_iterator::operator++()
+auto Matrix<T, I, J>::const_iterator::operator++() noexcept
     -> Matrix<T, I, J>::const_iterator&
 {
     ++col;
@@ -1322,7 +1316,7 @@ auto Matrix<T, I, J>::iterator::operator++(int) noexcept
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::const_iterator::operator++(int)
+auto Matrix<T, I, J>::const_iterator::operator++(int) noexcept
     -> Matrix<T, I, J>::const_iterator
 {
     auto temp = *this;
@@ -1341,7 +1335,7 @@ inline auto Matrix<T, I, J>::iterator::operator==(
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 inline auto Matrix<T, I, J>::const_iterator::operator==(
-    const const_iterator& iter) const -> bool
+    const const_iterator& iter) const noexcept -> bool
 {
     return row == iter.row and col == iter.col;
 }
@@ -1355,31 +1349,31 @@ auto Matrix<T, I, J>::iterator::operator!=(const iterator& iter) const noexcept
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
 auto Matrix<T, I, J>::const_iterator::operator!=(
-    const const_iterator& iter) const -> bool
+    const const_iterator& iter) const noexcept -> bool
 {
     return not(*this == iter);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::begin() -> Matrix<T, I, J>::iterator
+auto Matrix<T, I, J>::begin() noexcept -> Matrix<T, I, J>::iterator
 {
     return iterator(*this, 0, 0);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::begin() const -> Matrix<T, I, J>::const_iterator
+auto Matrix<T, I, J>::begin() const noexcept -> Matrix<T, I, J>::const_iterator
 {
     return const_iterator(*this, 0, 0);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::end() -> Matrix<T, I, J>::iterator
+auto Matrix<T, I, J>::end() noexcept -> Matrix<T, I, J>::iterator
 {
     return iterator(*this, row_size(), 0);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>
-auto Matrix<T, I, J>::end() const -> Matrix<T, I, J>::const_iterator
+auto Matrix<T, I, J>::end() const noexcept -> Matrix<T, I, J>::const_iterator
 {
     return const_iterator(*this, row_size(), 0);
 }
