@@ -851,8 +851,8 @@ constexpr auto Matrix<T, I, J>::operator-=(const Matrix<U, A, B>& matrix)
         throw std::logic_error{ "Matrix::invalid size" };
     }
 
-    for (std::size_t i = 0; i < I; ++i) {
-        for (std::size_t j = 0; j < J; ++j) {
+    for (std::size_t i = 0; i < row_size(); ++i) {
+        for (std::size_t j = 0; j < col_size(); ++j) {
             data[i][j] -= static_cast<T>(matrix.underlying_array()[i][j]);
         }
     }

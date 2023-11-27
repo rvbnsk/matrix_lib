@@ -582,6 +582,45 @@ TEST_CASE("Addition Assignment ")
     }
 }
 
+TEST_CASE("Adjection")
+{
+    SECTION("Adjection Same Size - Quadratic")
+    {
+        const mtl::Matrix<double, 2, 2> matrix1{ 1, 2, 3, 4 };
+        const mtl::Matrix<double, 2, 2> matrix2{ 2, 3, 4, 5 };
+        const mtl::Matrix<double, 2, 2> result{ 1, 1, 1, 1 };
+
+        REQUIRE(matrix2 - matrix1 == result);
+    }
+
+    SECTION("Adjection Same Size - Non quadratic")
+    {
+        const mtl::Matrix<double, 2, 3> matrix1{ 1, 2, 3, 4, 5, 6 };
+        const mtl::Matrix<double, 2, 3> matrix2{ 1, 2, 3, 4, 5, 6 };
+        const mtl::Matrix<double, 2, 3> result{ 0, 0, 0, 0, 0, 0 };
+
+        REQUIRE(matrix1 - matrix2 == result);
+    }
+
+    SECTION("Adjection Different Sizes")
+    {
+        const mtl::Matrix<double, 2, 2> matrix1{ 1, 2, 3, 4 };
+        const mtl::Matrix<double, 3, 3> matrix2{ 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        REQUIRE_THROWS_AS(matrix1 - matrix2, std::logic_error);
+    }
+
+    SECTION("Adjection Different Types")
+    {
+        const mtl::Matrix<int, 2, 2> matrix1{ 1, 2, 3, 4 };
+        const mtl::Matrix<double, 2, 2> matrix2{ 2.5, 3.5, 4.5, 5.5 };
+
+        const mtl::Matrix<double, 2, 2> result{ 1.5, 1.5, 1.5, 1.5 };
+
+        REQUIRE(matrix2 - matrix1 == result);
+    }
+}
+
 TEST_CASE("Subtraction and Subtraction Assignment")
 {
     SECTION("Subtraction Same Size")
