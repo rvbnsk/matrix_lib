@@ -629,6 +629,9 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::transpose() const noexcept -> Matrix<T, J, I>
 {
     Matrix<T, J, I> result{};
+
+    if (has_been_reallocated) { result.realloc(col_size(), row_size()); }
+
     for (std::size_t i = 0; i < row_size(); ++i) {
         for (std::size_t j = 0; j < col_size(); ++j) {
             result.underlying_array()[j][i] = this->underlying_array()[i][j];
@@ -980,13 +983,17 @@ template <
     std::size_t B>
 inline constexpr auto multiply(
     const Matrix<T, I, J>& lhs,
-    const Matrix<U, A, B>& rhs) -> Matrix<T, I, B>
+    const Matrix<U, A, B>& rhs) -> Matrix<std::common_type_t<T, U>, I, B>
 {
     if (lhs.col_size() != rhs.row_size()) {
         throw std::logic_error{ "Matrix::invalid size" };
     }
 
-    Matrix<T, I, B> result;
+    Matrix<std::common_type_t<T, U>, I, B> result;
+
+    if (lhs.is_reallocated() or rhs.is_reallocated()) {
+        result.realloc(lhs.row_size(), rhs.col_size());
+    }
 
     for (std::size_t i = 0; i < lhs.row_size(); ++i) {
         for (std::size_t j = 0; j < rhs.col_size(); ++j) {
