@@ -148,6 +148,8 @@ struct Matrix final {
 
     [[nodiscard]] constexpr auto is_reallocated() const noexcept -> bool;
 
+    constexpr auto clear() noexcept;
+
     template <detail::Arithmetic U, std::size_t A, std::size_t B>
     constexpr auto operator+=(const Matrix<U, A, B>&) -> Matrix<T, I, J>&;
 
@@ -808,6 +810,12 @@ template <detail::Arithmetic T, std::size_t I, std::size_t J>
 constexpr auto Matrix<T, I, J>::is_reallocated() const noexcept -> bool
 {
     return has_been_reallocated;
+}
+
+template <detail::Arithmetic T, std::size_t I, std::size_t J>
+constexpr auto Matrix<T, I, J>::clear() noexcept
+{
+    std::fill(begin(), end(), 0);
 }
 
 template <detail::Arithmetic T, std::size_t I, std::size_t J>

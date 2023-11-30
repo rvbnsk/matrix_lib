@@ -457,6 +457,15 @@ TEST_CASE("is diagonal")
     REQUIRE_FALSE(matrix2.is_diagonal());
 }
 
+TEST_CASE("Clear")
+{
+    mtl::Matrix<int, 2, 2> m1{ 1, 2, 3, 4 };
+    m1.clear();
+    REQUIRE(std::all_of(m1.begin(), m1.end(), [](const auto& elem) {
+        return elem == 0;
+    }));
+}
+
 TEST_CASE("Transposition")
 {
     SECTION("Same size transposition")
