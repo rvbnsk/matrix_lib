@@ -1,7 +1,7 @@
 # matrix_lib
 C++ library for matrix storage and easy management.
 
-Template Matrix Container provides easy to use matrix objet.
+Template matrix STL-like container provides easy to use matrix objet.
 Matrices can be managed using provided mathematical operations and functions.
 
 **Examples of use:**
