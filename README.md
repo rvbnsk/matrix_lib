@@ -6,13 +6,13 @@ Matrices can be managed using provided mathematical operations and functions.
 
 **Examples of use:**
 
-**Addition:**
+**Multiplication:**
 ```C++
 mtl::Matrix<int, 2, 2> matrix { {1, 2},
                                 {3, 4} };
 mtl::Matrix<int, 2, 2> matrix2(5);
 
-const auto result = matrix + matrix2;
+const auto result = matrix * matrix2;
 ```
 Result:
 
