@@ -1,3 +1,5 @@
+[![CI](https://github.com/rvbnsk/matrix_lib/actions/workflows/linux-build.yml/badge.svg)](https://github.com/rvbnsk/matrix_lib/actions/workflows/linux-build.yml)
+
 # matrix_lib
 C++ library for matrix storage and easy management.
 
