@@ -13,6 +13,7 @@ modernize-*,
 -modernize-type-traits,
 readability-*,
 -readability-identifier-length,
+-readability-named-parameter,
 performance-*,
 clang-analyzer-*,
 performance-*,
@@ -21,5 +22,6 @@ hicpp-*,
 -hicpp-avoid-c-arrays,
 -hicpp-use-nullptr,
 -hicpp-braces-around-statements,
--hicpp-no-array-decay
+-hicpp-no-array-decay,
+-hicpp-named-parameter
 '

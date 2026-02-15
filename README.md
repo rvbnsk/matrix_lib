@@ -58,3 +58,22 @@ With given values:
 2 5
 3 6
 ```
+
+# Building the project
+
+Prerequisites:
+- CMake in version 3.27.7 or higher
+- C++20 compatible compiler
+
+1. Clone the repository.
+
+2. Run CMake to configure the project and generate build files.
+```bash
+cmake -S . -B build -G <generator>
+```
+Replace `<generator>` with the appropriate generator for your platform (e.g., "Unix Makefiles" for Linux).
+
+3. Build the project using CMake.
+```bash
+cmake --build build
+```

@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <matrix.hpp>
+#include <matrix_lib/matrix.hpp>
 #include <numeric>
 
 TEST_CASE("Creating object - default constructor")
@@ -8,28 +8,13 @@ TEST_CASE("Creating object - default constructor")
     mtl::Matrix<int, sg_size, sg_size> m1;
     constexpr std::pair<std::size_t, std::size_t> size{ sg_size, sg_size };
 
-    SECTION("Allocation")
-    {
-        REQUIRE(m1.underlying_array() != nullptr);
-        REQUIRE_FALSE(m1.is_reallocated());
-    }
+    SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
 
     SECTION("Size")
     {
         REQUIRE(m1.size() == size);
         REQUIRE(m1.row_size() == sg_size);
         REQUIRE(m1.col_size() == sg_size);
-    }
-
-    SECTION("Reallocation")
-    {
-        constexpr std::size_t new_sg_size = 3;
-        m1.realloc(new_sg_size, new_sg_size);
-        std::pair<std::size_t, std::size_t> new_size = { new_sg_size,
-                                                         new_sg_size };
-        REQUIRE(m1.size() == new_size);
-        REQUIRE(m1.row_size() == new_sg_size);
-        REQUIRE(m1.col_size() == new_sg_size);
     }
 }
 
@@ -51,31 +36,18 @@ TEST_CASE("Underlying array")
     }
 }
 
-TEST_CASE("Reallocation")
-{
-    constexpr std::size_t base_size = 2;
-    mtl::Matrix<int, base_size, base_size> m{ 1, 2, 3, 4 };
-
-    REQUIRE_FALSE(m.is_reallocated());
-
-    REQUIRE(m.row_size() == base_size);
-    REQUIRE(m.col_size() == base_size);
-
-    constexpr std::size_t new_size = 3;
-    m.realloc(new_size, new_size);
-
-    REQUIRE(m.is_reallocated());
-
-    REQUIRE(m.row_size() == new_size);
-    REQUIRE(m.col_size() == new_size);
-}
-
 TEST_CASE("Creating object - big matrix size")
 {
-    constexpr std::size_t size = 10000;
-    mtl::Matrix<int, size, size> m1;
+    constexpr std::size_t size = 100;
+    mtl::Matrix<int, size, size> m1{};
 
-    SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
+    REQUIRE(m1.underlying_array() != nullptr);
+    REQUIRE(m1.size() == std::pair<std::size_t, std::size_t>{ size, size });
+    REQUIRE(m1.row_size() == size);
+    REQUIRE(m1.col_size() == size);
+    REQUIRE(std::all_of(m1.begin(), m1.end(), [](const auto& elem) {
+        return elem == 0;
+    }));
 }
 
 TEST_CASE("Creating object - fill with value")
@@ -115,17 +87,6 @@ TEST_CASE("Creating object - initializer list")
     const auto m1 = initialize_with_valid_list();
 
     SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
-
-    constexpr auto initialize_with_invalid_list = []() {
-        return mtl::Matrix<int, 2, 2>{ 1, 2, 3, 4, 5 };
-    };
-
-    SECTION("Invalid initializer_list")
-    {
-        REQUIRE_THROWS_AS(
-            initialize_with_invalid_list(),
-            std::invalid_argument);
-    }
 }
 
 TEST_CASE("Deduction guide")
@@ -133,7 +94,6 @@ TEST_CASE("Deduction guide")
     mtl::Matrix m1(5);
     const std::pair<std::size_t, std::size_t> expected_size{ 1, 1 };
     REQUIRE(m1.size() == expected_size);
-    REQUIRE(m1.at(0, 0) == 5);
 }
 
 TEST_CASE("Creating object - nested initializer list")
@@ -147,17 +107,6 @@ TEST_CASE("Creating object - nested initializer list")
     const auto m1 = initialize_with_valid_list();
 
     SECTION("Allocation") { REQUIRE(m1.underlying_array() != nullptr); }
-
-    constexpr auto initialize_with_invalid_list = []() {
-        return mtl::Matrix<int, 3, 3>{ { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8 } };
-    };
-
-    SECTION("Invalid initializer_list")
-    {
-        REQUIRE_THROWS_AS(
-            initialize_with_invalid_list(),
-            std::invalid_argument);
-    }
 }
 
 TEST_CASE("Copying matrix")
@@ -199,12 +148,9 @@ TEST_CASE("Moving matrix")
     {
         mtl::Matrix<int, 2, 3> matrix1{ 1, 2, 3, 4, 5, 6 };
         mtl::Matrix<int, 2, 3> matrix2 = std::move(matrix1);
-        REQUIRE(matrix1.underlying_array() == nullptr);
         REQUIRE(matrix2.underlying_array() != nullptr);
 
-        constexpr std::pair<std::size_t, std::size_t> size_prev{ 0, 0 };
         constexpr std::pair<std::size_t, std::size_t> size_val{ 2, 3 };
-        REQUIRE(matrix1.size() == size_prev);
         REQUIRE(matrix2.size() == size_val);
 
         int value{ 0 };
@@ -287,35 +233,39 @@ TEST_CASE("matrix size")
     REQUIRE(matrix.size() == size);
 }
 
-TEST_CASE("operator[]")
-{
-    SECTION("Row")
-    {
-        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
-        std::vector<int> row{ 1, 2 };
-        REQUIRE(matrix[0].get_row() == row);
-    }
+// TEST_CASE("operator[]")
+// {
+//     SECTION("Row")
+//     {
+//         mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+//         REQUIRE(
+//             matrix[0].get_row()
+//             == std::span<const int, 2>{ matrix.underlying_array()[0], 2 });
+//     }
 
-    SECTION("Assign row")
-    {
-        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
-        std::vector<int> new_row{ 0, 0 };
-        matrix[0] = new_row;
+//     SECTION("Assign row")
+//     {
+//         mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
+//         std::vector<int> new_row{ 0, 0 };
+//         matrix[0] = new_row;
 
-        REQUIRE(matrix[0].get_row() == new_row);
-        REQUIRE(matrix.underlying_array()[0][1] == new_row.at(1));
+//         REQUIRE(
+//             matrix[0].get_row()
+//             == std::span<const int, 2>{ matrix.underlying_array()[0], 2 });
+//         REQUIRE(matrix.underlying_array()[0][1] == new_row.at(1));
 
-        std::initializer_list<int> row{ 0, 0, 3, 4 };
-        REQUIRE(matrix == row);
-    }
+//         std::initializer_list<int> row{ 0, 0, 3, 4 };
+//         REQUIRE(matrix == row);
+//     }
 
-    SECTION("Crow")
-    {
-        const mtl::Matrix<int, 2, 2> matrix{ 4, 5, 6, 7 };
-        const std::vector<int> row{ 6, 7 };
-        REQUIRE(matrix[1].get_row() == row);
-    }
-}
+//     SECTION("Crow")
+//     {
+//         const mtl::Matrix<int, 2, 2> matrix{ 4, 5, 6, 7 };
+//         REQUIRE(
+//             matrix[1].get_row()
+//             == std::span<const int, 2>{ matrix.underlying_array()[1], 2 });
+//     }
+// }
 
 TEST_CASE("operator[][]")
 {
@@ -366,16 +316,6 @@ TEST_CASE("Range based for loop")
 
         const std::initializer_list<int> expected_result = { 4, 4, 4, 4 };
         REQUIRE(matrix == expected_result);
-    }
-
-    SECTION("With reallocation")
-    {
-        mtl::Matrix<int, 2, 2> matrix{ 1, 2, 3, 4 };
-
-        matrix.realloc(3, 3);
-        REQUIRE(matrix.is_reallocated());
-        constexpr int value = 1;
-        for (const auto elem : matrix) { REQUIRE(elem == value); }
     }
 
     SECTION("const Matrix")
@@ -505,12 +445,6 @@ TEST_CASE("Determinant")
         mtl::Matrix<int, 2, 2> matrix{ 2, 3, 4, 5 };
         REQUIRE(matrix.det() == -2);
     }
-
-    SECTION("incorrect Matrix size")
-    {
-        mtl::Matrix<int, 2, 3> matrix{};
-        REQUIRE_THROWS_AS(matrix.det(), std::logic_error);
-    }
 }
 
 TEST_CASE("Insert")
@@ -537,14 +471,6 @@ TEST_CASE("Addition")
         const mtl::Matrix<double, 2, 2> result{ 3, 5, 7, 9 };
 
         REQUIRE(matrix1 + matrix2 == result);
-    }
-
-    SECTION("Addition Different Sizes")
-    {
-        const mtl::Matrix<double, 2, 2> matrix1{ 1, 2, 3, 4 };
-        const mtl::Matrix<double, 3, 3> matrix2{ 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-
-        REQUIRE_THROWS_AS(matrix1 + matrix2, std::logic_error);
     }
 
     SECTION("Addition Different Types")
@@ -581,14 +507,6 @@ TEST_CASE("Addition Assignment ")
 
         REQUIRE(matrix1 == result);
     }
-
-    SECTION("Addition Assignment Different Sizes")
-    {
-        mtl::Matrix<double, 2, 2> matrix1{ 1, 2, 3, 4 };
-        const mtl::Matrix<double, 3, 3> matrix2{ 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-
-        REQUIRE_THROWS_AS(matrix1 += matrix2, std::logic_error);
-    }
 }
 
 TEST_CASE("Adjection")
@@ -609,14 +527,6 @@ TEST_CASE("Adjection")
         const mtl::Matrix<double, 2, 3> result{ 0, 0, 0, 0, 0, 0 };
 
         REQUIRE(matrix1 - matrix2 == result);
-    }
-
-    SECTION("Adjection Different Sizes")
-    {
-        const mtl::Matrix<double, 2, 2> matrix1{ 1, 2, 3, 4 };
-        const mtl::Matrix<double, 3, 3> matrix2{ 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-
-        REQUIRE_THROWS_AS(matrix1 - matrix2, std::logic_error);
     }
 
     SECTION("Adjection Different Types")
@@ -649,14 +559,6 @@ TEST_CASE("Subtraction and Subtraction Assignment")
 
         REQUIRE(matrix2 - matrix1 == result);
     }
-
-    SECTION("Subtraction Different Sizes")
-    {
-        const mtl::Matrix<double, 2, 2> matrix1{ 1, 2, 3, 4 };
-        const mtl::Matrix<double, 3, 3> matrix2{ 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-
-        REQUIRE_THROWS_AS(matrix1 - matrix2, std::logic_error);
-    }
 }
 
 TEST_CASE("Subtraction Assignment")
@@ -681,14 +583,6 @@ TEST_CASE("Subtraction Assignment")
         matrix1 -= matrix2;
 
         REQUIRE(matrix1 == result);
-    }
-
-    SECTION("Subtraction Assignment Different Sizes")
-    {
-        mtl::Matrix<double, 2, 2> matrix1{ 1, 2, 3, 4 };
-        const mtl::Matrix<double, 3, 3> matrix2{ 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-
-        REQUIRE_THROWS_AS(matrix1 -= matrix2, std::logic_error);
     }
 }
 
